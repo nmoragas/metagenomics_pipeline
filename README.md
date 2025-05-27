@@ -66,19 +66,19 @@ The table below provides a summary of the main tools used in this repository, al
 
 ## 3 - Workflow <a name = "workflow"></a>
 
- - 1. Metagenomics pipeline
+## 1. Metagenomics pipeline
             01. Filtrat humà (Bowtie2, Samtools).  
             02. QC (FastQC, MultiQC, Clumpify, BBDuk).  
             03. Perfilatge taxonòmic (Kraken2, Bracken).  
             04. Correcció batch (ConQuR).  
             05. Normalització composicional (zCompositions + CLR).  
 
-  - 2. Statistical analissi:
+## 2. Statistical analissi:
             a. Diversitat alfa (Shannon, Chao1) i beta (Aitchison, PERMANOVA).  
             b. Abundància diferencial (ANCOM-BC, LINDA).  
             c. Models predictius (LASSO, glmnet, AUC/Youden’s).
 
-  - 3. Data Visualization:
+## 3. Data Visualization:
             a. Volcano Plot: Run `volcano_plot.R` to visualize differentially abundant taxa or pathways.
             b. Heatmap: Use `heatmap.R` to generate heatmaps for significant associations.
             c. 
