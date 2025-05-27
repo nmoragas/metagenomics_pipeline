@@ -79,7 +79,8 @@ The table below provides a summary of the main tools used in this repository, al
 
 ### 1. Metagenomics pipeline
 
-[scripts/](scripts/1_ Metagenomics pipeline/)
+[scripts/](scripts/)
+
             01. Human read filtering – Performed using Bowtie2 and Samtools.
             02. Quality control (QC) – Includes FastQC, MultiQC, Clumpify, and BBDuk for deduplication, trimming, and adapter removal.
             03. Taxonomic profiling – Conducted with Kraken2 and refined using Bracken.
