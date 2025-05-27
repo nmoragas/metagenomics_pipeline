@@ -1,0 +1,104 @@
+#/bin/bash
+
+#$ -cwd
+#$ -S /bin/bash
+#$ -pe smp 7
+#$ -l mf=30G
+#$ -N nom_treball
+#$ -e nom_arx_errors
+#$ -o nom_arx_sortida
+##$ -t 1-100
+##$ -tc 15
+
+
+# Load modules
+#module load apps/kraken2-2.0.8-beta
+module load apps/kraken2-2.1.2
+module load apps/bracken-2.2
+
+set -e
+quality=20
+
+
+options=options.txt
+source $(echo $options)
+
+
+## 5.2_BRAKEN
+##############################################################################
+
+mkdir -p temp/5_kraken/2_braken 
+
+
+
+# FOR SPECIES:----------------------------------------------------------------
+
+#mkdir temp/5_kraken/2_braken/species 
+
+for i in temp/5_kraken/1_kraken2/k2_reports/*_Q20report.txt
+do
+  filename=$(basename "$i")
+  fname="${filename%.report.txt}"
+  bracken -d ${kraken_database} -i $i -r 150 -t 10 -l S -o temp/5_kraken/2_braken/species/${fname}_report_species.txt 
+done
+
+mv temp/5_kraken/1_kraken2/k2_reports/*_bracken.txt temp/5_kraken/2_braken/species
+
+
+
+
+########################################
+#####        CHECK POINT 8        #####
+########################################
+
+
+n_expected_8=$((n*2))
+
+while true; do
+    current_files_8=$(find temp/5_kraken/2_braken/species -maxdepth 1 -type f -name "*.txt" | wc -l)
+    [[ $current_files_8 -ge $n_expected_8 ]] && break
+    sleep 10  # Espera un segundo antes de revisar nuevamente
+done
+
+echo "Check point 8 = archivos esperados ok"
+
+
+
+
+
+
+
+
+
+
+## 5.3_krakentools_1
+##############################################################################
+
+## Transformació a format mpa
+
+
+# SPECIE
+
+mkdir temp/5_kraken/2_braken/species/mpa
+
+
+for i in temp/5_kraken/2_braken/species/*report_bracken.txt
+do
+  filename=$(basename "$i")
+  fname="${filename%.report_bracken.txt}"
+  python ./kreport2mpa.py -r $i -o temp/5_kraken/2_braken/species/mpa/${fname}_mpa.txt --display-header
+done
+
+
+
+
+
+
+
+
+
+
+
+
+
+
