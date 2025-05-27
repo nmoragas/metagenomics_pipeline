@@ -80,7 +80,7 @@ The table below provides a summary of the main tools used in this repository, al
             a. Alpha and beta diversity – Alpha diversity calculated with Shannon and Chao1 indices; beta diversity assessed using Aitchison distance and PERMANOVA.
             b. Differential abundance analysis – Performed using ANCOM-BC and LINDA.
             c. Predictive modeling – Includes LASSO regression with glmnet and performance evaluation via AUC.
-            d. Functional analysis
+            d. Functional analysis – Functional profiling of metagenomic reads was performed using HUMAnN3, allowing the identification of gene families and metabolic pathways. Results were normalized (copies per million), stratified by taxonomy when appropriate, and used for downstream comparisons of functional potential across sample groups.
 
 ### 3. Data Visualization:
             a. Volcano plots – Run volcano_plot.R to visualize differentially abundant taxa or pathways.
