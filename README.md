@@ -36,7 +36,6 @@ structure follows best practices commonly adopted in microbiome research.
 The table below summarizes the main files and directories in this repository, along with a brief description of their contents.
 |File  |Description            |
 |:----:|-----------------------|
-|[data/](data/)|raw and processed data|
 |[scripts/](scripts/)|Folder containing all scripts used to build the workflow.|
 |[docs/](docs/)|This folder includes PDF and PNG files that help illustrate the workflow, along with example tables and resulting plots.|
 
@@ -53,6 +52,7 @@ The table below provides a summary of the main tools used in this repository, al
 | Tool       | Description                                                                                   |
 |:----------:|-----------------------------------------------------------------------------------------------|
 | R    | Used for downstream statistical analysis, visualization, batch effect correction (e.g., ConQuR), and compositional data transformations in R. |
+| Python     | Supports various preprocessing and formatting tasks; used for converting classification outputs (e.g., with `combine_mpa.py`, `kreport2mpa.py`) and preparing abundance tables. |
 | bowtie2    | Aligns raw reads to the human genome to identify and remove host contamination.      |
 | Samtools   | Extracts unaligned (non-human) reads from Bowtie2 output to generate cleaned FASTQ files.     |
 | FastQC     | Assesses the quality of raw and processed sequencing reads.                                   |
@@ -78,6 +78,8 @@ The table below provides a summary of the main tools used in this repository, al
 
 
 ### 1. Metagenomics pipeline
+
+[scripts/](scripts/1_ Metagenomics pipeline/)
             01. Human read filtering – Performed using Bowtie2 and Samtools.
             02. Quality control (QC) – Includes FastQC, MultiQC, Clumpify, and BBDuk for deduplication, trimming, and adapter removal.
             03. Taxonomic profiling – Conducted with Kraken2 and refined using Bracken.
