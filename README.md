@@ -66,6 +66,14 @@ The table below provides a summary of the main tools used in this repository, al
 
 ## 3 - Workflow <a name = "workflow"></a>
 
+> ⚠️ **Warning**: The workflow is divided into two main sections:  
+> **1. Metagenomics Pipeline** – Covers preprocessing steps from raw FASTQ files to taxonomic abundance tables.  
+> **2. Statistical Analysis** – Includes diversity metrics, differential abundance testing, and predictive modeling.  
+>  
+> Below is a high-level overview of the steps involved in each section.  
+> For detailed usage instructions, please refer to the dedicated README inside each folder.
+---
+
 ![Workflow Overview](docs/Workflow.png)
 
 
