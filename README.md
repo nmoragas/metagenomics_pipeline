@@ -15,11 +15,21 @@ Shotgun metagenomics pipeline for processing microbiome samples
 
 ## 0 - Overview <a name = "over"></a>
 
-This repository provides a generalized bioinformatics pipeline for processing, analyzing, and visualizing shotgun metagenomic data.
-The workflow includes standard preprocessing steps such as host (e.g., human) read removal, quality control, deduplication, trimming, and adapter removal.
-Downstream analyses cover taxonomic profiling with tools like Kraken2 and Bracken2, batch effect correction, and statistical evaluation of microbial community composition.
-The pipeline also supports compositional data analysis, alpha and beta diversity metrics, differential abundance testing using ANCOM-BC and LINDA, and functional microbiome profiling with HUMAnN3.
-While specific parameters and datasets may differ across projects, the overall structure follows best practices commonly adopted in microbiome research.
+This repository provides a generalized bioinformatics pipeline for processing,
+analyzing, and visualizing shotgun metagenomic data. The workflow includes
+standard preprocessing steps such as host (e.g., human) read removal, quality
+control, deduplication, trimming, and adapter removal.
+
+Downstream analyses cover taxonomic profiling with tools like Kraken2 and
+Bracken2, batch effect correction, and statistical evaluation of microbial
+community composition.
+
+The pipeline also supports compositional data analysis, alpha and beta diversity
+metrics, differential abundance testing using ANCOM-BC and LINDA, and functional
+microbiome profiling with HUMAnN3.
+
+While specific parameters and datasets may differ across projects, the overall
+structure follows best practices commonly adopted in microbiome research.
 
 
 ## 1 - Respository structure <a name = "rep_stru"></a>
