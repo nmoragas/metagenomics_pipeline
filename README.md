@@ -74,12 +74,12 @@ The table below provides a summary of the main tools used in this repository, al
             02. Quality control (QC) – Includes FastQC, MultiQC, Clumpify, and BBDuk for deduplication, trimming, and adapter removal.
             03. Taxonomic profiling – Conducted with Kraken2 and refined using Bracken.
             04. Batch effect correction – Addressed using the ConQuR package.
-            05. Compositional normalization – Applied using zCompositions for zero replacement and CLR transformation.
+            05. Taxonomic data preparation - Involves genome length normalization, compositional data analysis, zero replacement (zCompositions), and centered log-ratio (CLR) transformation for robust statistical interpretation.
 
 ### 2. Statistical Analysis:
             a. Alpha and beta diversity – Alpha diversity calculated with Shannon and Chao1 indices; beta diversity assessed using Aitchison distance and PERMANOVA.
             b. Differential abundance analysis – Performed using ANCOM-BC and LINDA.
-            c. Predictive modeling – Includes LASSO regression with glmnet and performance evaluation via AUC and Youden’s index.
+            c. Predictive modeling – Includes LASSO regression with glmnet and performance evaluation via AUC.
             d. Functional analysis
 
 ### 3. Data Visualization:
