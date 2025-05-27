@@ -10,7 +10,6 @@ Shotgun metagenomics pipeline for processing microbiome samples
 - [1 - Respository structure](#rep_stru) - Instructions on how to begin with this project
 - [2 - Prerequisites](#prere) - Required software and installation steps 
 - [3 - Workflow](#workflow) - Detailed guide to each stage of the project
-- [4 - Authors](#authors) - List of contributors to the project
 
 
 ## 0 - Overview <a name = "over"></a>
@@ -83,12 +82,5 @@ The table below provides a summary of the main tools used in this repository, al
             a. Volcano Plot: Run `volcano_plot.R` to visualize differentially abundant taxa or pathways.
             b. Heatmap: Use `heatmap.R` to generate heatmaps for significant associations.
             c. 
-
-
-
-## 4 - Authors <a name = "authors"></a>
-Núria Moragas 
-nmoragas@idibell.cat
-[nmoragas - GitHub](https://github.com/nmoragas)
 
   
