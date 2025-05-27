@@ -67,20 +67,23 @@ The table below provides a summary of the main tools used in this repository, al
 ## 3 - Workflow <a name = "workflow"></a>
 
 ## 1. Metagenomics pipeline
-            01. Filtrat humà (Bowtie2, Samtools).  
-            02. QC (FastQC, MultiQC, Clumpify, BBDuk).  
-            03. Perfilatge taxonòmic (Kraken2, Bracken).  
-            04. Correcció batch (ConQuR).  
-            05. Normalització composicional (zCompositions + CLR).  
+            01. Human read filtering – Performed using Bowtie2 and Samtools.
+            02. Quality control (QC) – Includes FastQC, MultiQC, Clumpify, and BBDuk for deduplication, trimming, and adapter removal.
+            03. Taxonomic profiling – Conducted with Kraken2 and refined using Bracken.
+            04. Batch effect correction – Addressed using the ConQuR package.
+            05. Compositional normalization – Applied using zCompositions for zero replacement and CLR transformation.
 
-## 2. Statistical analissi:
-            a. Diversitat alfa (Shannon, Chao1) i beta (Aitchison, PERMANOVA).  
-            b. Abundància diferencial (ANCOM-BC, LINDA).  
-            c. Models predictius (LASSO, glmnet, AUC/Youden’s).
+## 2. Statistical Analysis:
+            a. Alpha and beta diversity – Alpha diversity calculated with Shannon and Chao1 indices; beta diversity assessed using Aitchison distance and PERMANOVA.
+            b. Differential abundance analysis – Performed using ANCOM-BC and LINDA.
+            c. Predictive modeling – Includes LASSO regression with glmnet and performance evaluation via AUC and Youden’s index.
+            d. Functional analysis
 
 ## 3. Data Visualization:
-            a. Volcano Plot: Run `volcano_plot.R` to visualize differentially abundant taxa or pathways.
-            b. Heatmap: Use `heatmap.R` to generate heatmaps for significant associations.
-            c. 
+            a. Volcano plots – Run volcano_plot.R to visualize differentially abundant taxa or pathways.
+            b. Heatmaps – Use heatmap.R to generate heatmaps for significant microbial associations.
+            c. (Optional additional items can be listed here, such as ordination plots or bar charts, if applicable.)
+
+
 
   
