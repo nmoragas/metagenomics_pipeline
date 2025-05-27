@@ -41,17 +41,54 @@ The table below summarizes the main files and directories in this repository, al
 |[scripts/](scripts/)|Folder containing all scripts used to build the workflow.|
 |[docs/](docs/)|This folder includes PDF and PNG files that help illustrate the workflow, along with example tables and resulting plots.|
 
-- `data/`: raw and processed data 
-- `scripts/`: all pipeline steps 
-- `docs/`: supplementary tables and figures
-
 ## 2 - Prerequisites <a name = "prere"></a>
+This workflow is currently designed to run in high-performance computing (HPC) environments using `SLURM` job scheduling with `Bash scripts` (#!/bin/bash).
+`RStudio` has been used for the statistical analysis components, complementing the pipeline with advanced microbiome data exploration and visualization.
+
+The initial preprocessing steps require substantial memory and storage resources. For example, each compressed paired-end sample (forward + reverse) may range from 1.5 to 3.5 GB.
+After deduplication and trimming, intermediate files can reach 3–8 GB per sample.
+
+To optimize storage usage, temporary files—such as the extracted human reads—can be optionally excluded from being saved.
+
+The table below provides a summary of the main tools used in this repository, along with a brief description of their purpose and functionality.
+| Tool       | Description                                                                                   |
+|:----------:|-----------------------------------------------------------------------------------------------|
+| R    | Used for downstream statistical analysis, visualization, batch effect correction (e.g., ConQuR), and compositional data transformations in R. |
+| bowtie2    | Aligns raw reads to the human genome to identify and remove host contamination.      |
+| Samtools   | Extracts unaligned (non-human) reads from Bowtie2 output to generate cleaned FASTQ files.     |
+| FastQC     | Assesses the quality of raw and processed sequencing reads.                                   |
+| MultiQC    | Aggregates FastQC reports across samples into a single summary for easier interpretation.     |
+| Clumpify   | Removes duplicate reads from shotgun sequencing data to reduce redundancy and file size.      |
+| BBTools    | Suite containing Clumpify and BBDuk; used for deduplication, trimming, and quality filtering. |
+| BBDuk      | Trims low-quality bases (PHRED > 20) and removes adapter sequences from reads.                |
+| Kraken2    | Performs taxonomic classification of quality-controlled reads using k-mer-based matching.     |
+| Bracken2   | Refines Kraken2 taxonomic assignments to improve species-level abundance estimation.          |
+
 
 ## 3 - Workflow <a name = "workflow"></a>
 
+ - 1. Metagenomics pipeline
+            01. Filtrat humà (Bowtie2, Samtools).  
+            02. QC (FastQC, MultiQC, Clumpify, BBDuk).  
+            03. Perfilatge taxonòmic (Kraken2, Bracken).  
+            04. Correcció batch (ConQuR).  
+            05. Normalització composicional (zCompositions + CLR).  
+
+  - 2. Statistical analissi:
+            a. Diversitat alfa (Shannon, Chao1) i beta (Aitchison, PERMANOVA).  
+            b. Abundància diferencial (ANCOM-BC, LINDA).  
+            c. Models predictius (LASSO, glmnet, AUC/Youden’s).
+
+  - 3. Data Visualization:
+            a. Volcano Plot: Run `volcano_plot.R` to visualize differentially abundant taxa or pathways.
+            b. Heatmap: Use `heatmap.R` to generate heatmaps for significant associations.
+            c. 
+
+
 
 ## 4 - Authors <a name = "authors"></a>
-Contact me at nmoragas@idibell.cat if you are interested in running it before it is done.
-- [nmoragas@idibell.cat](https://github.com/nmoragas)
+Núria Moragas 
+nmoragas@idibell.cat
+[nmoragas - GitHub](https://github.com/nmoragas)
 
   
