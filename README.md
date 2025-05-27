@@ -66,6 +66,9 @@ The table below provides a summary of the main tools used in this repository, al
 
 ## 3 - Workflow <a name = "workflow"></a>
 
+![Workflow Overview](docs/Workflow.png)
+
+
 ### 1. Metagenomics pipeline
             01. Human read filtering – Performed using Bowtie2 and Samtools.
             02. Quality control (QC) – Includes FastQC, MultiQC, Clumpify, and BBDuk for deduplication, trimming, and adapter removal.
