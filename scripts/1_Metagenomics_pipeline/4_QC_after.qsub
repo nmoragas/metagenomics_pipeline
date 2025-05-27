@@ -1,0 +1,52 @@
+#/bin/bash
+
+#$ -cwd
+#$ -S /bin/bash
+#$ -pe smp 7
+#$ -l mf=30G
+#$ -N nom_treball
+#$ -e nom_arx_errors
+#$ -o nom_arx_sortida
+##$ -t 1-100
+##$ -tc 15
+
+
+set -e
+quality=20
+
+
+options=options.txt
+source $(echo $options)
+
+
+########################################
+#####   4_QC_FASTQC_after_trim    #####
+########################################
+
+mkdir -p temp/4_QC_after_trim
+
+
+
+## 4.1_obtaining_fastqchtml
+#################################################################################
+## Load modules
+
+module load apps/fastqc-0.11.7
+fastqc -t 24 temp/3_dedup_trim/seq_output/* --outdir temp/4_QC_after_trim/
+
+
+## 4.2_MultiQC_aplication
+#################################################################################
+
+## Unio de tots els rports generats per 1_obtaining_fastqchtml.R amb MultiQC
+
+## Carregar el mòdul multiqc
+module load apps/multiqc-1.10.1  
+
+#Generar el report
+multiqc temp/4_QC_after_trim --outdir temp/4_QC_after_trim
+
+module unload apps/multiqc-1.10.1       
+
+
+
