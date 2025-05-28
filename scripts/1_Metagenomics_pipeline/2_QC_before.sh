@@ -1,11 +1,11 @@
 #!/bin/bash
 
-#SBATCH --job-name=hum_rem
+#SBATCH --job-name=pre_qc
 #SBATCH --mem=40G
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
-#SBATCH --output=hum_rem.txt
-#SBATCH --error=hum_rem.txt
+#SBATCH --output=pre_qc.txt
+#SBATCH --error=pre_qc.txt
 #SBATCH --chdir=.
 #SBATCH --array=1-2%2
 
