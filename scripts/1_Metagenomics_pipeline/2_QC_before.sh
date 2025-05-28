@@ -1,14 +1,14 @@
-#/bin/bash
+#!/bin/bash
 
-#$ -cwd
-#$ -S /bin/bash
-#$ -pe smp 5
-#$ -l mf=20G
-#$ -N nom_treball
-#$ -e nom_arx_errors
-#$ -o nom_arx_sortida
-##$ -t 1-100
-##$ -tc 15
+#SBATCH --job-name=hum_rem
+#SBATCH --mem=40G
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --output=hum_rem.txt
+#SBATCH --error=hum_rem.txt
+#SBATCH --chdir=.
+#SBATCH --array=1-2%2
+
 
 
 
@@ -30,7 +30,7 @@ mkdir -p temp/2_QC_before_trim
 #################################################################################
 ## Load modules
 
-module load apps/fastqc-0.11.7
+module load apps/fastqc/0.12.1
 
 fastqc -t 24 temp/1_human_remove/nohuman/* --outdir temp/2_QC_before_trim/
 
@@ -44,13 +44,13 @@ sleep 10
 #n=$(wc -l < temp/1_human_remove/1_filelist.txt)
 n_expected_2=$((n * 2))
 
-echo "Número esperado de archivos temporales: $n_expected"
+echo "Expected number of temporary files: $n_expected"
 
 while true; do
     current_files=$(find temp/2_QC_before_trim -maxdepth 1 -type f -name "*_fastqc.html" | wc -l)
     [[ $current_files -ge $n_expected_2 ]] && break
     echo "Check point 2 = archivos esperados no ok"
-    sleep 10  # Espera un segundo antes de revisar nuevamente
+    sleep 10  
 done
 
 echo "Check point 2 = archivos esperados ok"
@@ -61,17 +61,16 @@ echo "Check point 2 = archivos esperados ok"
 ## 2.2_MultiQC_aplication
 #################################################################################
 
-## Unio de tots els rports generats per 1_obtaining_fastqchtml.R amb MultiQC
+## Join all the generated reports for 1_obtaining_fastqchtml.R amb MultiQC
 
-## Carregar el mòdul multiqc
-module load apps/multiqc-1.10.1  
+## Load the multiqc module
+module load apps/multiqc/1.25.1
 
-#Generar el report
+#Generate the report
 multiqc temp/2_QC_before_trim --outdir temp/2_QC_before_trim 
 
 
-
-module unload apps/multiqc-1.10.1        
+module unload apps/multiqc/1.25.1        
 
 
 
