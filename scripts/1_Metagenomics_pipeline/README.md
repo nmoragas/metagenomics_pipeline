@@ -2,7 +2,15 @@
 
 This repository contains a pipeline for **preprocessing shotgun metagenomic samples**, from **raw sequencing data to non-normalized abundance tables**.
 
-The workflow is designed to be **parallelized**, allowing multiple samples to be processed simultaneously across multiple steps. Scripts are optimized for execution in HPC environments using SLURM or SGE scheduling systems.
+This pipeline is organized into two main parts:
+
+🔹 Part 1: Preprocessing and Taxonomic Classification
+Includes initial read processing (filtering, deduplication, trimming), quality control (pre and post), and taxonomic classification using Kraken2/Bracken.
+
+🔹 Part 2: Downstream Statistical Processing
+Covers batch effect correction, normalization, and transformation of taxonomic data for robust and interpretable statistical analysis.
+
+The workflow of part 1 is designed to be **parallelized**, allowing multiple samples to be processed simultaneously across multiple steps. Scripts are optimized for execution in HPC environments using SLURM or SGE scheduling systems.
 
 > ⚠️ **Warning**: Shotgun data is large and computationally intensive. Processing many samples at once (e.g., 15 - 25) may cause system overload.
 > 
@@ -14,15 +22,19 @@ The workflow is designed to be **parallelized**, allowing multiple samples to be
 - **Parallel execution** – Samples are processed in parallel across all steps to reduce runtime.
 - **Modular structure** – Split into five main steps, each handled by a dedicated script:
 
+### 🔹 Part 1: Preprocessing and Taxonomic Classification
+
+Part implemented in a Bash environment
+
 | script       | Description                                                                                   |
 |:----------:|-----------------------------------------------------------------------------------------------|
-| `1_human_remove` | Aligns raw reads to the human genome using Bowtie2 (`–very-sensitive-local -k 1`) and extracts non-human reads with Samtools. |
-| `2_QC_before`    | Runs initial quality control on raw FASTQ files using FastQC and aggregates reports with MultiQC.                       |
-| `3_dedup_trim`   | Removes duplicate reads with Clumpify, performs quality trimming (PHRED > 20) and adapter removal with BBDuk; discards pairs where one read < 75 bp. |
-| `4_QC_after`     | Performs post-processing quality control on trimmed reads with FastQC and MultiQC to verify improvements.               |
-| `5.1_kraken`     | Classifies clean reads taxonomically using Kraken2 with a 0.1% confidence threshold against the UHGG database.         |
-| `5.2_braken`     | Refines Kraken2 species-level abundance estimates using Bracken with a read-length parameter of 150 bp.                |
-| `5.3_krakentools2` | Converts Kraken2/Bracken reports into MetaPhlAn-style abundance tables (MPA format) for downstream analysis.          |
+| `1_human_remove.sh` | Aligns raw reads to the human genome using Bowtie2 (`–very-sensitive-local -k 1`) and extracts non-human reads with Samtools. |
+| `2_QC_before.sh`    | Runs initial quality control on raw FASTQ files using FastQC and aggregates reports with MultiQC.                       |
+| `3_dedup_trim.sh`   | Removes duplicate reads with Clumpify, performs quality trimming (PHRED > 20) and adapter removal with BBDuk; discards pairs where one read < 75 bp. |
+| `4_QC_after.sh`     | Performs post-processing quality control on trimmed reads with FastQC and MultiQC to verify improvements.               |
+| `5.1_kraken.sh`     | Classifies clean reads taxonomically using Kraken2 with a 0.1% confidence threshold against the UHGG database.         |
+| `5.2_braken.sh`     | Refines Kraken2 species-level abundance estimates using Bracken with a read-length parameter of 150 bp.                |
+| `5.3_krakentools2.sh` | Converts Kraken2/Bracken reports into MetaPhlAn-style abundance tables (MPA format) for downstream analysis.          |
 
 
 Additional files needed:
@@ -36,9 +48,19 @@ Additional files needed:
 - **Intermediate file management** – Temporary files are generated and stored in a structured way to facilitate clean-up.
 - **Final outputs** – Include merged abundance tables and QC reports.
 
+### 🔹 Part 2: Downstream Statistical Processing
+
+Part implemented in a R environment
+
+| script       | Description                                                                                   |
+|:----------:|-----------------------------------------------------------------------------------------------|
+| `6_batch_correction.rmd`   | Performs batch effect correction on taxonomic profiles using the ConQuR package to reduce technical variability across sample groups. |
+| `7_taxonomic_data_preparation.rmd` | Prepares taxonomic abundance data for statistical analysis: includes genome length normalization, zero replacement (zCompositions), compositional data handling, and centered log-ratio (CLR) transformation. |
 
 ## 🚀 How to Run the Pipeline
 
+
+### Part1:
 Step-by-step:
 
 1 Copy Required Files to Project Directory:
@@ -78,11 +100,9 @@ sbatch 5.2_braken.qsub
 sbatch 5.3_krakentools2.qsub
 ```
 
-## 🏁 RESULTS
-De manera automiatica es cren carpetes on es van guardant els arxius finals i temporal de cadascun dels pasos. amb la seguent estructura
+Folders are automatically created to store both final and temporary files for each step, following the structure below:
 
 ```
-
 temp/
 └──── 1_human_remove
        └─── nohuman
@@ -100,11 +120,14 @@ temp/
            └─── species
                 └─── mpa
 out/
-
 ```
 
 The primary input file for downstream analyses is:
 `out/bracken_abundance_species_mpa.txt`
+
+### Part2:
+This stage is carried out in an R environment. It takes as input the file `out/bracken_abundance_species_mpa.txt`, and runs a set of R scripts to perform taxonomic data preparation for statistical analysis.
+The batch effect correction step is optional and can be applied depending on the characteristics of the dataset and the study design.
 
 
 
