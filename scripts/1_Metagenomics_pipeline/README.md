@@ -78,7 +78,7 @@ sbatch 5.2_braken.qsub
 sbatch 5.3_krakentools2.qsub
 ```
 
-
+## 🏁 RESULTS
 De manera automiatica es cren carpetes on es van guardant els arxius finals i temporal de cadascun dels pasos. amb la seguent estructura
 
 ```
@@ -98,13 +98,13 @@ temp/
             └─── k2_reports
        └─── 2_braken
            └─── species
-                └─── mpa 
-
-├── 5.1_kraken
-├── 5.2_braken
-└── 5.3_krakentools2
-
-
+                └─── mpa
+out/
 
 ```
+
+The primary input file for downstream analyses is:
+`out/bracken_abundance_species_mpa.txt`
+
+
 
