@@ -31,7 +31,7 @@ While specific parameters and datasets may differ across projects, the overall
 structure follows best practices commonly adopted in microbiome research.
 
 
-## ⚙️1 - Respository structure <a name = "rep_stru"></a>
+## 1 - Respository structure <a name = "rep_stru"></a>
 
 The table below summarizes the main files and directories in this repository, along with a brief description of their contents.
 |File  |Description            |
@@ -64,7 +64,7 @@ The table below provides a summary of the main tools used in this repository, al
 | Bracken2   | Refines Kraken2 taxonomic assignments to improve species-level abundance estimation.          |
 
 
-## 🚀3 - Workflow <a name = "workflow"></a>
+## 3 - Workflow <a name = "workflow"></a>
 
 > ⚠️ **Warning**: The workflow is divided into two main sections:  
 > **1. Metagenomics Pipeline** – Covers preprocessing steps from raw FASTQ files to taxonomic abundance tables.  
