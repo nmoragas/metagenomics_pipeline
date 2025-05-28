@@ -54,8 +54,10 @@ Part implemented in a R environment
 
 | script       | Description                                                                                   |
 |:----------:|-----------------------------------------------------------------------------------------------|
-| `6_batch_correction.rmd`   | Performs batch effect correction on taxonomic profiles using the ConQuR package to reduce technical variability across sample groups. |
+| `6_batch_correction.rmd`   | (optional) Performs batch effect correction on taxonomic profiles using the ConQuR package to reduce technical variability across sample groups. |
 | `7_taxonomic_data_preparation.rmd` | Prepares taxonomic abundance data for statistical analysis: includes genome length normalization, zero replacement (zCompositions), compositional data handling, and centered log-ratio (CLR) transformation. |
+| `8_phyloseq_object_creation.rmd` | (optional) Builds a `phyloseq` object from processed taxonomic abundance data, taxonomy assignments, and sample metadata, enabling structured and reproducible downstream ecological and statistical analysis.  |
+
 
 ## 🚀 How to Run the Pipeline
 
@@ -129,5 +131,18 @@ The primary input file for downstream analyses is:
 This stage is carried out in an R environment. It takes as input the file `out/bracken_abundance_species_mpa.txt`, and runs a set of R scripts to perform taxonomic data preparation for statistical analysis.
 The batch effect correction step is optional and can be applied depending on the characteristics of the dataset and the study design.
 
+This part of the analysis is implemented in R and is applied to the file out/bracken_abundance_species_mpa.txt, which contains species-level abundance profiles from Bracken.
+
+- 6_batch_correction.rmd
+           Preliminary Checks and Cleaning
+           a) Clean the abundance table: remove zero-abundance taxa and standardize column names.
+           b) Optional Batch Effect Correction. If necessary, batch effect correction is performed at this stage using the ConQuR package.
+
+- 7_taxonomic_data_preparation.rmd
+           a) If batch effect correction is not applied: clean the abundance table by removing zero-abundance taxa and standardizing column names.
+           b) Normalize species-level abundances by genome length to obtain comparable abundance measures across taxa.
+
+- 8_phyloseq_object_creation.rmd
+           A phyloseq object is constructed to facilitate downstream ecological and statistical analysis. It should minimally include:
 
 
