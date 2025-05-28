@@ -133,16 +133,16 @@ The batch effect correction step is optional and can be applied depending on the
 
 This part of the analysis is implemented in R and is applied to the file out/bracken_abundance_species_mpa.txt, which contains species-level abundance profiles from Bracken.
 
-- 6_batch_correction.rmd
+- `6_batch_correction.rmd`
            Preliminary Checks and Cleaning
            a) Clean the abundance table: remove zero-abundance taxa and standardize column names.
            b) Optional Batch Effect Correction. If necessary, batch effect correction is performed at this stage using the ConQuR package.
 
-- 7_taxonomic_data_preparation.rmd
+- `7_taxonomic_data_preparation.rmd`
            a) If batch effect correction is not applied: clean the abundance table by removing zero-abundance taxa and standardizing column names.
            b) Normalize species-level abundances by genome length to obtain comparable abundance measures across taxa.
 
-- 8_phyloseq_object_creation.rmd
+- `8_phyloseq_object_creation.rmd`
            A phyloseq object is constructed to facilitate downstream ecological and statistical analysis. It should minimally include:
 
 
