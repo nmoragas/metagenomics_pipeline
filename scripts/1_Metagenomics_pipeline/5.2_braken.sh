@@ -1,20 +1,19 @@
-#/bin/bash
+#!/bin/bash
 
-#$ -cwd
-#$ -S /bin/bash
-#$ -pe smp 7
-#$ -l mf=30G
-#$ -N nom_treball
-#$ -e nom_arx_errors
-#$ -o nom_arx_sortida
-##$ -t 1-100
-##$ -tc 15
+#SBATCH --job-name=krak_2
+#SBATCH --mem=40G
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --output=krak_2.txt
+#SBATCH --error=krak_2.txt
+#SBATCH --chdir=.
+##SBATCH --array=1-2%2
 
 
 # Load modules
 #module load apps/kraken2-2.0.8-beta
-module load apps/kraken2-2.1.2
-module load apps/bracken-2.2
+module load apps/kraken2/2.1.3
+module load apps/bracken/2.9
 
 set -e
 quality=20
@@ -63,19 +62,10 @@ done
 echo "Check point 8 = archivos esperados ok"
 
 
-
-
-
-
-
-
-
-
 ## 5.3_krakentools_1
 ##############################################################################
 
-## Transformació a format mpa
-
+## Transformation to mpa format
 
 # SPECIE
 
