@@ -79,15 +79,29 @@ The table below provides a summary of the main tools used in this repository, al
 
 ### 1. Metagenomics pipeline
 
-[scripts/](scripts/)
+[scripts/1_Metagenomics_pipeline](scripts/1_Metagenomics_pipeline)
 
-            01. Human read filtering – Performed using Bowtie2 and Samtools.
-            02. Quality control (QC) – Includes FastQC, MultiQC, Clumpify, and BBDuk for deduplication, trimming, and adapter removal.
-            03. Taxonomic profiling – Conducted with Kraken2 and refined using Bracken.
-            04. Batch effect correction – Addressed using the ConQuR package.
-            05. Taxonomic data preparation - Involves genome length normalization, compositional data analysis, zero replacement (zCompositions), and centered log-ratio (CLR) transformation for robust statistical interpretation.
+            Part1:
+
+            1_human_remove.sh - Aligns raw reads to the human genome using Bowtie2 (--very-sensitive-local -k 1) and removes human reads using Samtools.
+            2_QC_before.sh - Initial Quality Control (QC). Performs quality assessment on raw FASTQ files using FastQC and aggregates reports with MultiQC.
+            3_dedup_trim.sh - Deduplication and Trimming. Removes duplicate reads using Clumpify, applies quality trimming (PHRED > 20) and adapter removal using BBDuk, and discards read pairs where one read is shorter than 75 bp.
+            4_QC_after.sh - Post-Trimming Quality Control. Re-runs FastQC and MultiQC to assess quality improvements after trimming.
+            Taxonomic Profiling:
+            5.1_kraken.sh – Classifies clean reads using Kraken2 with a 0.1% confidence threshold against the UHGG database.
+            5.2_braken.sh – Refines species-level abundance estimates using Bracken with a read-length parameter of 150 bp.
+            5.3_krakentools2.sh – Converts Kraken2/Bracken output into MetaPhlAn-style (MPA format) abundance tables for downstream analysis.
+
+            Part2:
+
+            6_batch_correction.rmd - (Optional) Batch Effect Correction. Applies batch effect correction using the ConQuR package if technical variation is detected across sample groups.
+            7_taxonomic_data_preparation.rmd - Taxonomic Data Preparation. Prepares taxonomic abundance data for statistical analysis: includes genome length normalization, zero replacement using zCompositions, compositional data handling, and centered log-ratio (CLR) transformation.
+            8_phyloseq_object_creation.rmd - (Optional) Phyloseq Object Creation. Builds a phyloseq object from the processed abundance table, taxonomy assignments, and metadata (e.g., case vs. control) for structured downstream ecological and statistical analysis.
+                   
 
 ### 2. Statistical Analysis:
+[scripts/2_statistical_analysis](scripts/2_statistical_analysis)
+
             a. Alpha and beta diversity – Alpha diversity calculated with Shannon and Chao1 indices; beta diversity assessed using Aitchison distance and PERMANOVA.
             b. Differential abundance analysis – Performed using ANCOM-BC and LINDA.
             c. Predictive modeling – Includes LASSO regression with glmnet and performance evaluation via AUC.
