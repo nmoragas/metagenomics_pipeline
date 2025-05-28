@@ -1,16 +1,13 @@
-#/bin/bash
+#!/bin/bash
 
-#$ -cwd
-#$ -S /bin/bash
-#$ -pe smp 7
-#$ -l mf=30G
-#$ -N nom_treball
-#$ -e nom_arx_errors
-#$ -o nom_arx_sortida
-#$ -t 1-100
-#$ -tc 15
-
-# Please note that this was done before submission
+#SBATCH --job-name=krak_1
+#SBATCH --mem=40G
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --output=krak_1.txt
+#SBATCH --error=krak_1.txt
+#SBATCH --chdir=.
+##SBATCH --array=1-2%2
 
 
 set -e
@@ -30,8 +27,8 @@ source $(echo $options)
 
 # Load modules
 
-module load apps/kraken2-2.1.2
-module load apps/bracken-2.2
+module load apps/kraken2/2.1.3
+module load apps/bracken/2.9
 
 #Classify reads with kraken2
 
@@ -66,12 +63,9 @@ sleep 10
 
 ## 5.2_unio_list_fw_rv.txt. 
 #################################################################################
-## Crear un txt amb la info de list_forward_sf + list_reverse. Dins aquesta mateixa carpeta:
+## Create a TXT file combining the contents of `list_forward_sf` and `list_reverse` in this directory:
 
 paste -d ' ' temp/5_kraken/1_kraken2/5_list_forward_qc.txt temp/5_kraken/1_kraken2/5_list_reverse_qc.txt > temp/5_kraken/1_kraken2/5_filelist.txt
-
-
-
 sleep 30
 
 
@@ -82,8 +76,8 @@ sleep 30
 
 
 filelist_5=temp/5_kraken/1_kraken2/5_filelist.txt
-m5=$(sed "${SGE_TASK_ID}q;d" $filelist_5 | cut -d ' ' -f1)
-m6=$(sed "${SGE_TASK_ID}q;d" $filelist_5 | cut -d ' ' -f2)
+m5=$(sed "${SLURM_ARRAY_TASK_ID}q;d" $filelist_5 | cut -d ' ' -f1)
+m6=$(sed "${SLURM_ARRAY_TASK_ID}q;d" $filelist_5 | cut -d ' ' -f2)
 
 fname=$(echo $m5 | awk -F "/" '{print $NF}' | cut -f1 -d "." | sed 's/R1//')
 
