@@ -1,21 +1,20 @@
-#/bin/bash
+#!/bin/bash
 
-#$ -cwd
-#$ -S /bin/bash
-#$ -pe smp 5
-#$ -l mf=20G
-#$ -N nom_treball
-#$ -e nom_arx_errors
-#$ -o nom_arx_sortida
-#$ -t 1-100
-#$ -tc 15
+#SBATCH --job-name=hum_rem
+#SBATCH --mem=40G
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --output=hum_rem.txt
+#SBATCH --error=hum_rem.txt
+#SBATCH --chdir=.
+#SBATCH --array=1-2%2
 
 # Please note that this was done before submission
 
-module load apps/java-9.0.4
-module load apps/bowtie2-2.3.4
-module load apps/samtools-1.8
-module load apps/bbmap-38.26
+module load apps/java 
+module load apps/bowtie2/2.5.4
+module load apps/samtools/1.21
+module load apps/bbmap/39.12
 
 
 set -e
@@ -61,7 +60,7 @@ sleep 30
 
 ## 1.2_unio_list_fw_rv.txt. 
 #################################################################################
-## Crear un txt amb la info de list_forward_sf + list_reverse. Dins aquesta mateixa carpeta:
+## Create a text file in this same directory that combines the contents of list_forward_sf and list_reverse:
 
 
 
@@ -84,15 +83,15 @@ filelist_1=temp/1_human_remove/1_filelist.txt
 
 
 
-m1=$(sed "${SGE_TASK_ID}q;d" $filelist_1 | cut -d ' ' -f1)
-m2=$(sed "${SGE_TASK_ID}q;d" $filelist_1 | cut -d ' ' -f2)
+m1=$(sed "${SLURM_ARRAY_TASK_ID}q;d" $filelist_1 | cut -d ' ' -f1)
+m2=$(sed "${SLURM_ARRAY_TASK_ID}q;d" $filelist_1 | cut -d ' ' -f2)
 id=$(echo $m1 | awk -F "/" '{print $NF}' | cut -f1 -d "." | sed 's/_R1//')
 
 
 
 
 bowtie2 \
-    -x /mnt/typhon/references/human/hg38/ncbi/indexes/bowtie2/genome \
+    -x ${human_database} \
     -p 8 \
     -1 ${m1} \
     -2 ${m2} \
