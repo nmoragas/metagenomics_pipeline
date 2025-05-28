@@ -1,15 +1,19 @@
 
 
-# A modificar:
+# To modify
 ---------------------------------------------------------------
-n=100  #n mostres
-raw=/mnt/typhon/data/metagenomics/VHIO/BATCH2/01.RawData
-kraken_database=/mnt/typhon/data/references/metagenomics_dynamic/uhgg/2.0.2/kraken2_uhgg_v2_0_2
+# Configuration variables (edit before running the pipeline)
+
+n_samples=           # Total number of samples to process
+raw_dir=             # Path to directory containing raw FASTQ files
+kraken_db_dir=       # Path to your Kraken2 reference database
+human_db_dir=        # Path to your human (host) Kraken2 reference database
 
 
-
-# No tocar:
+# Do not modify:
 ---------------------------------------------------------------
+# Paths for intermediate and output directories used by each pipeline step
+
 temp1=./temp/1_human_remove/human
 out1=./temp/1_human_remove/nohuman
 
