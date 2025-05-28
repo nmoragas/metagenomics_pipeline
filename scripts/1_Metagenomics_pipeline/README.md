@@ -62,7 +62,7 @@ Part implemented in a R environment
 ## 🚀 How to Run the Pipeline
 
 
-### Part1:
+### 🔹 Part1:
 Step-by-step:
 
 1 Copy Required Files to Project Directory:
@@ -127,7 +127,7 @@ out/
 The primary input file for downstream analyses is:
 `out/bracken_abundance_species_mpa.txt`
 
-### Part2:
+### 🔹 Part2:
 This stage is carried out in an R environment. It takes as input the file `out/bracken_abundance_species_mpa.txt`, and runs a set of R scripts to perform taxonomic data preparation for statistical analysis.
 The batch effect correction step is optional and can be applied depending on the characteristics of the dataset and the study design.
 
