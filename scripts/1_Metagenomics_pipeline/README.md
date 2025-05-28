@@ -30,61 +30,81 @@ Additional files needed:
 |:----------:|-----------------------------------------------------------------------------------------------|
 | `combine_mpa.py`   | Merges individual MPA abundance tables across all samples into a single consolidated matrix.                 |
 | `kreport2mpa.py`   | Parses Kraken2 `.kreport` or Bracken output and converts it into an MPA-compatible format.                   |
-| `options.txt`      | Configuration file specifying input/output paths, sample lists, thresholds, and resource parameters for the pipeline. |
+| `options.txt`      | Configuration file specifying input/output paths, sample number, and kraken database dir. |
 
 
 - **Intermediate file management** – Temporary files are generated and stored in a structured way to facilitate clean-up.
 - **Final outputs** – Include merged abundance tables and QC reports.
 
 
+## 🚀 How to Run the Pipeline
 
-## 🧪 Script Header Configuration
-
-Each script is parallelizable via its **SGE/SLURM headers**. These must be modified according to your cluster settings.
-
-**Example (SGE header):**
-```bash
-#!/bin/bash              # Shell to use
-#$ -cwd                  # Run in current working directory
-#$ -S /bin/bash          # Command shell
-#$ -pe smp 5             # Number of CPUs
-#$ -l mf=20G             # Requested memory
-#$ -N 1_hr               # Job name
-#$ -e log_1_hr           # Error log file
-#$ -o log_1_hr           # Output log file
-#$ -t 1-46               # Task array: number of samples
-#$ -tc 15                # Max simultaneous tasks
-
-🚀 How to Run the Pipeline
 Step-by-step:
-Copy Required Files to Project Directory:
 
-combine_mpa.py
+1 Copy Required Files to Project Directory:
+ - scripts/
+ - combine_mpa.py
+ - kreport2mpa.py
+ - options.txt
 
-kreport2mpa.py
+2 Configure:
+   a Edit options.txt as needed (input/output paths, parameters).
+   b Modify the header of each script to fit your cluster environment. Each script is parallelizable via its **SGE/SLURM headers**. These must be modified according to your cluster settings.
+   
+   **Example (SLUM header):**
+      
+```bash
+#!/bin/bash
+#SBATCH --job-name=job_name        # Name of the job, used in queue listings
+#SBATCH --mem=40G                  # Total memory allocation for the job (40 gigabytes)
+#SBATCH --ntasks=1                 # Number of tasks (MPI ranks); here a single task
+#SBATCH --cpus-per-task=8          # Number of CPU cores allocated to this task
+#SBATCH --output=job_name.txt       # File to which STDOUT will be written
+#SBATCH --error=job_name.txt        # File to which STDERR will be written
+#SBATCH --chdir=.                  # Run the job from the current working directory
+# SBATCH --array=1-1300%25         # Submit a task array of 1–1300, with max 25 concurrent
+```
 
-parallelized/scripts/
+3 Execute Scripts:
+  Submit each step one at a time, waiting for each job to finish before launching the next:
 
-parallelized/options.txt
+```bash
+sbatch 1_human_remove.qsub
+sbatch 2_QC_before.qsub
+sbatch 3_dedup_trim.qsub
+sbatch 4_QC_after.qsub
+sbatch 5.1_kraken.qsub
+sbatch 5.2_braken.qsub
+sbatch 5.3_krakentools2.qsub
+```
 
-Configure:
 
-Edit options.txt as needed (input/output paths, parameters).
+De manera automiatica es cren carpetes on es van guardant els arxius finals i temporal de cadascun dels pasos. amb la seguent estructura
 
-Modify the header of each script to fit your cluster environment.
+```
 
-Execute Scripts:
-Submit each script in sequence via:
+temp/
+└──── 1_human_remove
+       └─── nohuman
+       └─── human     
+└──── 2_QC_before
+└──── 3_dedup_trim
+       └─── seq_dedum_trim
+       └─── seq_output  
+└──── 4_QC_after
+└──── 5_kraken/
+       └─── 1_kraken
+            └─── k2_outputs
+            └─── k2_reports
+       └─── 2_braken
+           └─── species
+                └─── mpa 
 
-bash
-Copiar
-Editar
-qsub 1_human_remove.qsub
-qsub 2_QC_before.qsub
-qsub 3_dedup_trim.qsub
-qsub 4_QC_after.qsub
-qsub 5.1_kraken.qsub
-qsub 5.2_braken.qsub
-qsub 5.3_krakentools2.qsub
+├── 5.1_kraken
+├── 5.2_braken
+└── 5.3_krakentools2
 
+
+
+```
 
