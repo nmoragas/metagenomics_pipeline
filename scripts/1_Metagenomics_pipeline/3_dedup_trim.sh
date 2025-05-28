@@ -1,21 +1,20 @@
-#/bin/bash
+#!/bin/bash
 
-#$ -cwd
-#$ -S /bin/bash
-#$ -pe smp 8
-#$ -l mf=80G
-#$ -N nom_treball
-#$ -e nom_arx_errors
-#$ -o nom_arx_sortida
-#$ -t 1-100
-#$ -tc 15
+#SBATCH --job-name=dedup_trim
+#SBATCH --mem=40G
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=8
+#SBATCH --output=dedup_trim.txt
+#SBATCH --error=dedup_trim.txt
+#SBATCH --chdir=.
+##SBATCH --array=1-2%2
 
 # Please note that this was done before submission
 
-module load apps/java-9.0.4
-module load apps/bowtie2-2.3.4
-module load apps/samtools-1.8
-module load apps/bbmap-38.26
+module load apps/java 
+module load apps/bowtie2/2.5.4
+module load apps/samtools/1.21
+module load apps/bbmap/39.12
 
 set -e
 quality=20
@@ -50,7 +49,6 @@ sleep 20
 
 if [ ! -e "temp/3_dedup_trim/3_list_forward_sg.txt" ]; then
   for i in temp/1_human_remove/nohuman/*m1.* ; do
-    # Utiliza 'realpath' para obtener la ruta completa del archivo
     echo "$(realpath "$i")";
   done > temp/3_dedup_trim/3_list_forward_qc.txt
 fi
@@ -59,7 +57,6 @@ sleep 30
 
 if [ ! -e "temp/3_dedup_trim/3_list_reverse_sg.txt" ]; then
   for i in temp/1_human_remove/nohuman/*m2.* ; do
-    # Utiliza 'realpath' para obtener la ruta completa del archivo
     echo "$(realpath "$i")";
   done > temp/3_dedup_trim/3_list_reverse_qc.txt
 fi
@@ -69,7 +66,7 @@ sleep 30
 
 ## 3.2_unio_list_fw_rv.txt. 
 #################################################################################
-## Crear un txt amb la info de list_forward_sf + list_reverse. Dins aquesta mateixa carpeta:
+## Create a txt with the info of list_forward_sf + list_reverse. Dins aquesta mateixa folder:
 
 if [ ! -e "temp/3_dedup_trim/3_filelist.txt" ]; then
   paste -d ' ' temp/3_dedup_trim/3_list_forward_qc.txt temp/3_dedup_trim/3_list_reverse_qc.txt > temp/3_dedup_trim/3_filelist.txt
@@ -89,8 +86,8 @@ sleep 50
 filelist_2=temp/3_dedup_trim/3_filelist.txt
 
 
-m3=$(sed "${SGE_TASK_ID}q;d" $filelist_2 | cut -d ' ' -f1)
-m4=$(sed "${SGE_TASK_ID}q;d" $filelist_2 | cut -d ' ' -f2)
+m3=$(sed "${SLURM_ARRAY_TASK_ID}q;d" $filelist_2 | cut -d ' ' -f1)
+m4=$(sed "${SLURM_ARRAY_TASK_ID}q;d" $filelist_2 | cut -d ' ' -f2)
 id2=$(echo $m3 | awk -F "/" '{print $NF}' | cut -f1 -d "." | sed 's/R1//')
 
 clumpify.sh \
