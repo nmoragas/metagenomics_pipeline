@@ -1,5 +1,5 @@
 ---
-title: "POST KRAKEN_1_genome_length_normalization"
+title: "7_taxonomic_data_preparation.rmd"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
   html_document:
@@ -10,11 +10,19 @@ output:
 ---
 
 
- a) If batch effect correction is not applied: clean the abundance table by removing zero-abundance taxa and standardizing column names.
-     b) Normalize species-level abundances by genome length to obtain comparable abundance measures across taxa.
+**ATENTION!** If batch effect correction is not applied: clean the abundance table by removing zero-abundance taxa and standardizing column names. 
+See: scripts/1_Metagenomics_pipeline/6_batch_correction.rmd - 
+          a) Clean the abundance table: remove zero-abundance taxa and standardize column names.
 
-############################## ON GOING
 
+
+- Normalize species-level abundances by genome length to obtain comparable abundance measures across taxa.
+
+Steps:
+    1. Load genome length data and manifest.txt file
+    2. Harmonize species names between genome_length and Kraken species data
+    3. Normalize abundance values by genome length
+  
 
 ```{r}
 library(dplyr)
@@ -26,353 +34,133 @@ library(pheatmap)
 
 ```
 
+####################################################################################################
+# 0 LOAD DATA
+####################################################################################################
 
 
-# 1 Normalization
+## kraken - batch effect corrected result
 
-Pasos:
-  - 1 Load dades genome_lenght + manifest.txt
-  - 2 modificar per equiparar species_kraken i genome_lenghts species
-  - 3 normalització per genoma lenght
-  
-  
+```{r}
+# kraken - batch effect corrected result:
+species_kraken <- readRDS("taxa_batch_corrected_0.rds")
+species_kraken <- as.data.frame(species_kraken)
 
-## 1 load genome_lenght
+```
+## load genome_lenght
 
-El format en el qual està escrit el llinatge en el resultat de kraken+braken i les dades descarregades de la base de dades difereixen en alguns aspectes que s'han d'equiparar.
+The Kraken database should provide a table listing species and their corresponding genome lengths.
+
+Note: The format of species names (lineages) in the Kraken/Bracken output and in the genome length reference file might differ.  
+A normalization or mapping step may be necessary to ensure consistent matching between both datasets (not provided).
 
 Equiparació realitzada amb script *equiparacio_kraken.Rmd*. Veure: */mnt/typhon/data/references/metagenomics_dynamic/uhgg/2.0.2/*
 
 
 ```{r}
-# load genome_lenght + Ordena segons sp + conversion base pair a megabases (MB).
-genome_length = read_tsv("/mnt/typhon/data/references/metagenomics_dynamic/uhgg/2.0.2/genomes_all_metadata_equiparacio_kraken.tsv") %>%
-    arrange(species) %>% # organització ordre ascendent 
-    mutate(length = Length/1000000) # Afegeix una nova columna anomenada "length" al dataframe resultant, calculada dividint els valors de la columna "Length" entre 1,000,000 (per convertir-los a megabytes)
+# Load genome length data
+# - Sort species in ascending order
+# - Convert genome lengths from base pairs to megabases (MB)
 
+genome_length <- read.table("_____") %>%
+    arrange(species) %>%                     # Sort by species name
+    mutate(length = Length / 1e6)            # Convert base pairs to megabases (MB)
 
-genome_length$length<-as.double(genome_length$length)
+# Ensure the 'length' column is of numeric type
+genome_length$length <- as.double(genome_length$length)
 
-genome_length<-distinct(genome_length, Lineage, .keep_all = T)
-
-genome_length
+# Remove duplicated lineages, keeping the first occurrence
+genome_length <- distinct(genome_length, Lineage, .keep_all = TRUE)
 
 ```
 
+####################################################################################################
+# 2 Data preparation
+####################################################################################################
 
 
-
-## 3 nomalització
-
-Codi JM
-
-## preparació dades
 ```{r}
-# Transformar df resultats kraken a matriu on: columnes especies - files pacients
+# Transform Kraken results dataframe into a matrix:
+#   - Columns represent species
+#   - Rows represent patient/sample IDs
 
-# load data
-#species_kraken <- read.table("0_bracken_abundance_species_mpa_net.txt", header = T, sep = "\t", check.names = FALSE)
-species_kraken <- readRDS("0.2_taxa_corrected_0.rds")
-species_kraken <- as.data.frame(species_kraken)
-  
-  
-# extracció sp
+# Extract species names from the taxonomic lineage
 species_kraken$species <- sub(".*s__([^|]+).*", "s__\\1", rownames(species_kraken))
 
+# Save full lineage and extracted species into a separate dataframe for later reference
+kraken_lineage_species <- data.frame(Lineage = rownames(species_kraken), species = species_kraken$species)
 
-
-# Guardar llinatge i espècies en un df a part, per recuperar llinatge a posteriori
-kraken_llinatge_especie <- data.frame(Lineage = rownames(species_kraken), species = species_kraken$species)
-
-
-
-# eliminar llinatge del df principal
+# Remove taxonomic lineage from the main dataframe and set species as row names
 rownames(species_kraken) <- species_kraken$species
 species_kraken$species <- NULL
 
-
 ```
 
-
-Preparació de les dues taules (genome_lenght i resultats_kraken) presentin les mateixes espècies per comparar i en el mateix ordre.
+Prepare genome_length and kraken_results tables to contain the same species and in the same order for comparison.
 
 ```{r}
- 
+# Select only species from genome_length that are present in species_kraken
+table(row.names(species_kraken) %in% genome_length$species)
 
-
-# seleccio de genome_lenght els que tenim als resultats de kraken
-table(row.names(species_kraken) %in%  genome_length$species )
-#TRUE 
-#4628 
-
-
-genome_length<-genome_length[genome_length$species %in% row.names(species_kraken),]
+genome_length <- genome_length[genome_length$species %in% row.names(species_kraken), ]
 table(genome_length$species %in% row.names(species_kraken))
-#TRUE 
-#4628 
 
+# Sort both data frames by species to ensure identical order
+genome_length <- genome_length[order(genome_length$species), ]
+species_kraken <- species_kraken[order(row.names(species_kraken)), ]
 
-
-# Ordenar llistats. Els dos igualment ordenats:
-genome_length<-genome_length[order(genome_length$species),]
-species_kraken<-species_kraken[order(row.names(species_kraken)),]
-
-# comprobació que estiguin igualment ordenats
+# Confirm that both lists are now aligned by species
 identical(row.names(species_kraken), genome_length$species)
-# [1] TRUE
 
 ```
 
-## norm
+####################################################################################################
+# 3 Normalization
+####################################################################################################
+
 
 ```{r}
-
-#  evitar la notació científica
+# Avoid scientific notation in output (e.g., 1e+06)
 options(scipen = 999)
 
-# Normalització per llargada del genoma
- species_all_normalized <- as.data.frame(species_kraken/genome_length$length)
+# Normalize species abundances by genome length (in megabases)
+species_all_normalized <- as.data.frame(species_kraken / genome_length$length)
 
-species_all_normalized
 ```
 
-
-
-
 ```{r}
-
-
 table(rowSums(species_all_normalized) == 0)
-#FALSE  - no batch effect corrected
-# 4628    
- 
-# FALSE  TRUE - yes batch effect corrected
-#  4625     3 
+
 ```
 
 
 
 ```{r}
+# Rename rownames using full taxonomic lineage
 
-# Reanomenar rownames amb el llinatge
-
+# Add species as a column to match lineages
 species_all_normalized$species <- rownames(species_all_normalized)
 
-table(species_all_normalized$species %in%  kraken_llinatge_especie$species  )
-# TRUE 
-# 4628 
+# Confirm matching species between normalized table and lineage metadata
+table(species_all_normalized$species %in% kraken_llinatge_especie$species)
 
+# Join to retrieve full lineage
+species_all_normalized <- left_join(species_all_normalized, kraken_llinatge_especie, by = "species")
 
-
-
-species_all_normalized <- left_join(species_all_normalized, kraken_llinatge_especie, by = "species" )
-species_all_normalized[,c("species", "Lineage")]
-
-
-
+# Replace rownames with lineage info
 rownames(species_all_normalized) <- species_all_normalized$Lineage
-species_all_normalized$Lineage<-NULL
-species_all_normalized$species<-NULL
 
+# Remove helper columns
+species_all_normalized$Lineage <- NULL
+species_all_normalized$species <- NULL
+
+# View final normalized table
 species_all_normalized
 
+# Save the batch-effect-corrected and genome-normalized table
+save(species_all_normalized, file = "1_shotgun_species_BEC_normalized.RData", compress = "xz")
+write.table(species_all_normalized, "1_shotgun_species_BEC_normalized.txt", col.names = TRUE, sep = "\t")
 
-# amb 0_bracken_abundance_species_mpa_net.txt
-# save(species_all_normalized, file="1_shotgun_species_normalized.RData", compress='xz')
-# write.table(species_all_normalized,"1_shotgun_species_normalized.txt", col.names =T, sep = "\t")
-
-
-
-# BATCH EFFECT CORRECTED (BEC):
-save(species_all_normalized, file="1_shotgun_species_BEC_normalized.RData", compress='xz')
-write.table(species_all_normalized,"1_shotgun_species_BEC_normalized.txt", col.names =T, sep = "\t")
-
-
-
-```
-
-####################
-#     PCA
-###################
-
-```{r}
-# PCA PLOT
-
-# BATCH
-
-
-# preparació ID batch - factor
-
-# batch
-id_mostres1 <- read.table("/mnt/hydra/ubs/shared/projects/microbiome/GCATmb/1_preprocessing/1r_enviament_2024_02_19/primer_enviement_mostres_seq_ID.txt")
-id_mostres1$batch <- c("batch1")
-
-id_mostres1$V1 <- gsub("C", "", id_mostres1$V1)
-id_mostres1$V1 <- gsub("B", "", id_mostres1$V1)
-
-id_mostres2 <- read.table("/mnt/hydra/ubs/shared/projects/microbiome/GCATmb/1_preprocessing/2n_enviament_2024-04-15/segon_enviement_mostres_seq_ID.txt")
-id_mostres2$batch <- c("batch2")
-
-id_mostres2$V2 <- gsub("B_1.fq.gz", "", id_mostres2$V2)
-id_mostres2$V1 <- NULL
-colnames(id_mostres2) <- c("V1","batch")
-
-id_mostres <- rbind(id_mostres1, id_mostres2)
-
-sample_order <- rownames(tax_table)
-
-
-
-# ID BATCH
-
-## select GCATmb patients:
-
-table(id_mostres$V1 %in% rownames(tax_table))
-
-## ordenar
-identical(id_mostres$V1 , rownames(tax_table))
-id_mostres <- id_mostres[match(rownames(tax_table), id_mostres$V1),]
-
-identical(id_mostres$V1, rownames(tax_table))
-
-
-
-batch_id <- as.factor(id_mostres$batch)
-
-
-
-
-##################
-
-df2 <- t(species_all_normalized)
-
-
-# AFTER BEC + normalization
-# Calcular la matriu de distància Bray-Curtis.  mostres a files i espècies a columnes.
-dist_matrix_cor <- vegdist(df2, method = "bray")
-
-
-#PERMANOVA pvalue:
-adonis_result_cor <- adonis2(dist_matrix_cor ~ as.factor(batch_id))
-p_value_cor <-  adonis_result_cor$`Pr(>F)`[1]
-
-
-#  Calcular les coordenades principals amb cmdscale
-pcoa_result_cor <- cmdscale(dist_matrix_cor, k = 2, eig = TRUE)
-
-
-#Crear un dataframe amb els resultats de la PCoA
-pcoa_df_cor <- data.frame(PCoA1 = pcoa_result_cor$points[,1],
-                      PCoA2 = pcoa_result_cor$points[,2],
-                      batch_id = batch_id)
-
-## Proportion of variation captured by each eigen vector
-explained_var_cor <- round(((pcoa_result_cor$eig)/sum(pcoa_result_cor$eig))*100,2)
-
-
-
-colors <- c( "lightgrey" ,"#a39dbf"  )
-
-# Pas 4: Crear el gràfic amb ggplot2
-after <- ggplot(pcoa_df_cor, aes(x = PCoA1, y = PCoA2, color = batch_id)) +
-  geom_point(size = 2) + 
-  scale_color_manual(values = colors) +  # Usa un vector de colors definit
-  labs(
-    title = "After Correction + normalization Bray-Curtis",
-    x = paste0("PC1 - ", round(explained_var_cor[1], 2), "%"),
-    y = paste0("PC2 - ", round(explained_var_cor[2], 2), "%")
-  ) +
-  theme_classic() +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  
-  theme(axis.text.x = element_text(size = 15),  # Mida de lletra de les etiquetes de l'eix X
-        axis.text.y = element_text(size = 15),  # Mida de lletra de les etiquetes de l'eix Y
-        axis.title = element_text(size = 15),   # Mida de lletra dels títols dels eixos
-        plot.title = element_text(hjust = 0.5, face = "bold"),  # Mida de lletra del títol del gràfic
-        legend.text = element_text(size = 15),
-        legend.box = "horizontal") +
-  annotate("text", x = -0.3, y = 0.5, 
-           label = paste("p-value:", round(p_value_cor, 3)), 
-           size = 5, hjust = 0.5, vjust = 0.5, color = "black")+
-  
-  stat_ellipse(type = "norm", level = 0.95)  # Afegeix les el·lipses
-
-
-after
-
-
-jpeg(paste0("1_PCA_after_correction_batch_normalized.jpeg"),width=6,height=5,units="in",res=300)
-after
-dev.off()
-```
-
-```{r}
-######## estic per aqui per PCA de les dades normalitzades pero sense la coreccio del batch
-
-otumat <- read.table("1_shotgun_species_normalized.txt", header = T, sep = "\t", check.names = FALSE)
-
-
-df2 <- t(otumat)
-
-
-# Normalized data (no BEC)
-# Calcular la matriu de distància Bray-Curtis.  mostres a files i espècies a columnes.
-dist_matrix_cor <- vegdist(df2, method = "bray")
-
-
-#PERMANOVA pvalue:
-adonis_result_cor <- adonis2(dist_matrix_cor ~ as.factor(batch_id))
-p_value_cor <-  adonis_result_cor$`Pr(>F)`[1]
-
-
-#  Calcular les coordenades principals amb cmdscale
-pcoa_result_cor <- cmdscale(dist_matrix_cor, k = 2, eig = TRUE)
-
-
-#Crear un dataframe amb els resultats de la PCoA
-pcoa_df_cor <- data.frame(PCoA1 = pcoa_result_cor$points[,1],
-                      PCoA2 = pcoa_result_cor$points[,2],
-                      batch_id = batch_id)
-
-## Proportion of variation captured by each eigen vector
-explained_var_cor <- round(((pcoa_result_cor$eig)/sum(pcoa_result_cor$eig))*100,2)
-
-
-
-colors <- c( "lightgrey" ,"#a39dbf"  )
-
-# Pas 4: Crear el gràfic amb ggplot2
-norm <- ggplot(pcoa_df_cor, aes(x = PCoA1, y = PCoA2, color = batch_id)) +
-  geom_point(size = 2) + 
-  scale_color_manual(values = colors) +  # Usa un vector de colors definit
-  labs(
-    title = "No BEC + normalization Bray-Curtis",
-    x = paste0("PC1 - ", round(explained_var_cor[1], 2), "%"),
-    y = paste0("PC2 - ", round(explained_var_cor[2], 2), "%")
-  ) +
-  theme_classic() +
-  theme(plot.title = element_text(hjust = 0.5)) +
-  
-  theme(axis.text.x = element_text(size = 15),  # Mida de lletra de les etiquetes de l'eix X
-        axis.text.y = element_text(size = 15),  # Mida de lletra de les etiquetes de l'eix Y
-        axis.title = element_text(size = 15),   # Mida de lletra dels títols dels eixos
-        plot.title = element_text(hjust = 0.5, face = "bold"),  # Mida de lletra del títol del gràfic
-        legend.text = element_text(size = 15),
-        legend.box = "horizontal") +
-  annotate("text", x = -0.3, y = 0.5, 
-           label = paste("p-value:", round(p_value_cor, 3)), 
-           size = 5, hjust = 0.5, vjust = 0.5, color = "black")+
-  
-  stat_ellipse(type = "norm", level = 0.95)  # Afegeix les el·lipses
-
-
-norm
-
-
-
-jpeg(paste0("1_PCA_no_correction_normalized.jpeg"),width=6,height=5,units="in",res=300)
-norm
-dev.off()
 ```
 
 
