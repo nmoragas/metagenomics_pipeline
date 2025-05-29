@@ -1,0 +1,195 @@
+---
+title: "6_batch_correction"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+
+6_batch_correction.rmd Preliminary Checks and Cleaning
+
+     a) Clean the abundance table: remove zero-abundance taxa and standardize column names.
+     b) Optional Batch Effect Correction. If necessary, batch effect correction is performed at this stage using the ConQuR package.
+
+Conditional Quantile Regression (ConQuR)  - https://www.nature.com/articles/s41467-022-33071-9
+package ConQuR -  ConQuR : https://github.com/wdl2459/ConQuR
+Vignette: https://wdl2459.github.io/ConQuR/ConQuR.Vignette.html
+
+
+```{r}
+library(dplyr)
+library(tidyverse)
+library(vegan)
+library(coin)
+library(pheatmap)
+
+
+# devtools::install_github("wdl2459/ConQuR")
+library(ConQuR)
+library(doParallel)
+```
+
+####################################################################################################
+# 0 LOAD DATA
+####################################################################################################
+
+```{r}
+# kraken result:
+species_kraken <- read.table(paste0(dir_data,"bracken_abundance_species_mpa.txt"), check.names = FALSE) 
+
+# Modify or standardize batch ID for downstream processing . Colname: ("ID_samples","batch").
+
+id_mostres <- read.table("_____.txt")
+
+# Optional: include covariates if applicable
+covariates <- read.table("_____.txt")
+```
+
+
+####################################################################################################
+# a) Clean the abundance table: remove zero-abundance taxa and standardize column names.
+####################################################################################################
+
+## 1) clean_table
+
+```{r}
+# colnames modification
+
+colnames(species_kraken) <-gsub("C_nohuman_Q20.report_bracken.txt", "", colnames(species_kraken))
+colnames(species_kraken) <-gsub("B_nohuman_Q20.report_bracken.txt", "", colnames(species_kraken))
+colnames(species_kraken) <-gsub("C_nohuman_Q20report_bracken.txt", "", colnames(species_kraken))
+colnames(species_kraken) <-gsub("B_nohuman_Q20report_bracken.txt", "", colnames(species_kraken))
+
+```
+
+## 2) all 0 sp - NA
+
+```{r}
+
+table(rowSums(species_kraken) == 0)
+species_kraken <- species_kraken[!rowSums(species_kraken) == 0,]
+
+```
+
+
+
+
+####################################################################################################
+# b) Optional Batch Effect Correction. If necessary, batch effect correction is performed at this stage using the ConQuR package.
+####################################################################################################
+
+##   1) Data preparation
+#########################
+
+```{r}
+# sp extraction 
+species_kraken$species <- sub(".*s__([^|]+).*", "s__\\1", rownames(species_kraken))
+
+# Save lineage and species information in a separate DataFrame to enable lineage retrieval at a later stage.
+kraken_llinatge_especie <- data.frame(Lineage = rownames(species_kraken), species = species_kraken$species)
+
+# Remove lineage information from the main DataFrame
+rownames(species_kraken) <- species_kraken$species
+species_kraken$species <- NULL
+```
+
+
+```{r}
+# TAX table
+
+#samples- orw / taxa - col
+tax_table <- as.data.frame(t(species_kraken))
+```
+
+```{r}
+# Order the taxonomy table and sample IDs consistently based on sample identifiers
+identical(id_mostres$V1 , rownames(tax_table))
+id_mostres <- id_mostres[match(rownames(tax_table), id_mostres$V1),]
+identical(id_mostres$V1, rownames(tax_table))
+batch_id <- as.factor(id_mostres$batch)
+```
+
+```{r}
+# Order covariates table and sample IDs consistently based on sample identifiers
+identical(covariates$id_icobiobanc , rownames(tax_table))
+table(covariates$id_icobiobanc %in% rownames(tax_table) )
+covariates <- covariates[match(rownames(tax_table) ,covariates$id_icobiobanc ),]
+```
+
+
+##   2 APLICACIO ConQuR 
+#########################
+
+
+```{r}
+options(warn=-1)
+taxa_corrected1 = ConQuR(tax_tab=tax_table, batchid=batch_id, covariates=covariates, batch_ref="batch1",num_core = 20  )
+
+saveRDS(taxa_corrected1, "taxa_batch_corrected.rds") # -> data to use
+
+```
+
+
+
+#########################
+##   3. VALIDATION STEPS
+#########################
+
+```{r}
+# Convert tax_table and corrected table to data frames
+df1 <- as.data.frame(tax_table) 
+df2 <- as.data.frame(taxa_corrected1)
+
+# Check if all zeros in df1 are also zeros in df2
+zero_comparison <- (df1 == 0) & (df2 == 0)
+if(all((df1 == 0) == zero_comparison)) {
+  print("All zeros in df1 are preserved in df2.")
+} else {
+  print("Discrepancy found: not all zeros in df1 are zeros in df2.")
+  discrepant_positions <- which((df1 == 0) & (df2 != 0), arr.ind = TRUE)
+  num_discrepancies <- nrow(discrepant_positions)
+  print(paste("Number of zero mismatches:", num_discrepancies))
+}
+
+# Force df2 to have zero where df1 has zero
+df2[df1 == 0 & df2 != 0] <- 0
+
+# Recheck after correction
+zero_comparison <- (df1 == 0) & (df2 == 0)
+if(all((df1 == 0) == zero_comparison)) {
+  print("Zero correction successful: df2 now matches df1.")
+} else {
+  print("Discrepancies remain after correction.")
+}
+
+# Save corrected taxa table
+saveRDS(taxa_corrected1, "0.2_taxa_corrected.rds")
+```
+
+
+
+
+##   4. SAVE FORMATTED DATA
+#########################
+
+
+```{r}
+# Transpose for downstream analysis (samples as rows)
+df2 <- t(df2)
+
+# Check matching IDs and update rownames with full lineage
+table(rownames(df2) %in% kraken_llinatge_especie$species)
+identical(rownames(df2), kraken_llinatge_especie$species)
+
+rownames(df2) <- kraken_llinatge_especie$Lineage
+
+# Save final version
+saveRDS(df2, "taxa_batch_corrected_0.rds")
+```
+
+
+
