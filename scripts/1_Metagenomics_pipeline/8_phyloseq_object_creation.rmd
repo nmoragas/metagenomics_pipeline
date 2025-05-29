@@ -10,3 +10,10 @@ output:
 ---
 
 # ON GOING
+
+
+
+(optional) Builds a phyloseq object from processed taxonomic abundance data, taxonomy assignments, and sample metadata, enabling structured and reproducible downstream ecological and statistical analysis.
+
+
+
