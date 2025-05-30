@@ -116,10 +116,10 @@ Part2:
 ## 4 - Authors <a name = "authors"></a>
 This pipeline was primarily developed and implemented by:
 
-Núria Moragas, PhD – @nmoragas
+Núria Moragas, PhD – [@nmoragas](https://github.com/nmoragas)
 Designed, developed, and documented the full metagenomics pipeline, including data preprocessing, taxonomic classification, functional profiling, and downstream analyses.
 
 The statistical analysis section integrates specific functions contributed by:
 
-Elies Ramon, PhD – @elies-ramon
+Elies Ramon, PhD – [@elies-ramon](https://github.com/elies-ramon)
 Provided and adapted several functions used for alpha and beta diversity, as well as parts of the compositional data analysis pipeline.
