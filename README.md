@@ -10,6 +10,7 @@ Shotgun metagenomics pipeline for processing microbiome samples
 - [1 - Respository structure](#rep_stru) - Instructions on how to begin with this project
 - [2 - Prerequisites](#prere) - Required software and installation steps 
 - [3 - Workflow](#workflow) - Detailed guide to each stage of the project
+- [4 - Authors](#authors) - Detailed guide to each stage of the project 
 
 
 ## 0 - Overview <a name = "over"></a>
@@ -112,6 +113,13 @@ Part2:
             b. Heatmaps – Use heatmap.R to generate heatmaps for significant microbial associations.
             c. (Optional additional items can be listed here, such as ordination plots or bar charts, if applicable.)
 
+## 4 - Authors <a name = "authors"></a>
+This pipeline was primarily developed and implemented by:
 
+Núria Moragas, PhD – @nmoragas
+Designed, developed, and documented the full metagenomics pipeline, including data preprocessing, taxonomic classification, functional profiling, and downstream analyses.
 
-  
+The statistical analysis section integrates specific functions contributed by:
+
+Elies Ramon, PhD – @elies-ramon
+Provided and adapted several functions used for alpha and beta diversity, as well as parts of the compositional data analysis pipeline.
