@@ -9,11 +9,544 @@ output:
     toc_float: true
 ---
 
+
+###########
 # ON GOING
-
-
+#########
 
 (optional) Builds a phyloseq object from processed taxonomic abundance data, taxonomy assignments, and sample metadata, enabling structured and reproducible downstream ecological and statistical analysis.
+
+
+*INDEX*
+
+      1) OTU_TABLE: taula abundància normalitzada per mida del genoma 
+      2) TAX_TABLE: taula taxonomia
+      3) SAMPLE_TABLE: metadadades 
+      4) philoseq object creation
+
+
+*INFO*
+
+- https://github.com/joey711/phyloseq/issues/1480 IDEA.
+  - https://www.biostars.org/p/455240/ 
+
+*TUTORIAL:*
+  - Importing phyloseq Data - https://joey711.github.io/phyloseq/import-data.html
+  -  https://mvuko.github.io/meta_phyloseq/ 
+  - https://www.nicholas-ollberding.com/post/taxonomic-and-functional-profiling-using-biobakery-workflows/ 
+
+
+You can look at this tutorial on the data structure required for otu_table.
+In short, you need to use your OTU column as the row names, and remove the
+OTU column from the matrix, so that your matrix contains only numeric data type.
+
+If you are also creating Taxonomy Table with tax_table, then the row names should be 
+the same as that in the OTU Table.
+Again you can see the an example in the tutorial.
+
+
+```{r}
+library(phyloseq)
+library(microbiome)
+library(stringr )
+library(dplyr)
+library(taxonomizr)
+
+options(scipen = 999) # Establir opcions per desactivar la notació científica
+```
+
+
+##########################################
+# 0_load_data
+#########################################
+
+```{r}
+# abundance table
+otumat <- read.table("1_shotgun_species_BEC_normalized.txt", header = T, sep = "\t", check.names = FALSE)
+
+
+# metadata
+metadata<-readRDS("./metadata.rds") # to modify
+
+```
+
+##########################################
+# 1 OTU table
+##########################################
+
+OTU table structure:
+  - colnames: Samples
+  - rownames: species 
+
+## Update lineages
+*Optional*
+
+```{r}
+
+# Creating SQL files - library(taxonomizr)
+getNamesAndNodes(outDir = "./taxonomizr",
+                 url = "ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz" ,fileNames = c("names.dmp", "nodes.dmp"))
+
+read.nodes.sql(nodeFile = "./taxonomizr/nodes.dmp",
+               sqlFile = "./taxonomizr/nameNode.sqlite", overwrite = FALSE)
+
+read.names.sql(nameFile="./taxonomizr/names.dmp",
+               sqlFile = "./taxonomizr/nameNode.sqlite", overwrite = FALSE)
+
+ab_table<-otumat
+
+ab_table<-tibble::rownames_to_column(ab_table, var="Lineage_anc")
+
+ab_table$Lineage_anc<-gsub("\\|",";", ab_table$Lineage_anc)
+ab_table$Lineage_anc<-gsub("[a-z]__", "", ab_table$Lineage_anc)
+
+```
+
+
+```{r}
+# Update llinatges, taxonomizs
+
+ab_table <- ab_table %>%
+  mutate(phylum_a = str_split(Lineage_anc, ";", simplify = T)[,1])
+ab_table <- ab_table %>%
+  mutate(class_a = str_split(Lineage_anc, ";", simplify = T)[,2])
+ab_table <- ab_table %>%
+  mutate(order_a = str_split(Lineage_anc, ";", simplify = T)[,3])
+ab_table <- ab_table %>%
+  mutate(family_a = str_split(Lineage_anc, ";", simplify = T)[,4])
+ab_table <- ab_table %>%
+  mutate(genus_a = str_split(Lineage_anc, ";", simplify = T)[,5])
+ab_table <- ab_table %>%
+  mutate(species_a = str_split(Lineage_anc, ";", simplify = T)[,6])
+
+
+ab_table_work<-ab_table[,c(1,1302:1307)]
+
+ab_table_work <- ab_table_work %>% mutate_all(na_if,"")
+
+```
+
+
+```{r}
+# CLEANING TAXONOMIC NOMENCLATURES BEFORE AUTOMATION
+# Be cautious with inconsistent naming conventions from databases
+
+
+# Example: 'Acidaminococcus_fermentans_A' → remove trailing underscores with single capital letters
+ab_table_work$species_a <- gsub("_([A-Z])$", "", ab_table_work$species_a)
+
+# Fix mid-name underscores followed by capital letters (e.g., '_Ferm_A' → 'Ferm_A')
+ab_table_work$species_a <- gsub("_([A-Z])", "", ab_table_work$species_a)
+
+# Special cases: Clostridium and Bacillus species with extra capital letters
+ab_table_work$species_a <- gsub("Clostridium[A-Z]", "Clostridium", ab_table_work$species_a)
+ab_table_work$species_a <- gsub("Bacillus[A-Z]", "Bacillus", ab_table_work$species_a)
+
+# GENUS: Standardize genus names by removing inconsistent suffixes or renaming specific variants
+ab_table_work$genus_a <- gsub("_([A-Z])$", "", ab_table_work$genus_a)
+ab_table_work$genus_a <- gsub("Clostridium_AP", "Clostridium", ab_table_work$genus_a)
+ab_table_work$genus_a <- gsub("Clostridium_AQ", "Clostridium", ab_table_work$genus_a)
+ab_table_work$genus_a <- gsub("Bacillus_BD", "Bacillus", ab_table_work$genus_a)
+ab_table_work$genus_a <- gsub("Bacillus_BE", "Bacillus", ab_table_work$genus_a)
+ab_table_work$genus_a <- gsub("Bacillus_BN", "Bacillus", ab_table_work$genus_a)
+
+# FAMILY: Remove single capital letter suffixes
+ab_table_work$family_a <- gsub("_([A-Z])$", "", ab_table_work$family_a)
+
+# ORDER: Same cleanup as family
+ab_table_work$order_a <- gsub("_([A-Z])$", "", ab_table_work$order_a)
+
+# CLASS: Same cleanup
+ab_table_work$class_a <- gsub("_([A-Z])$", "", ab_table_work$class_a)
+
+# PHYLUM: Clean suffixes; note e.g., "Firmicutes_A" still labeled Firmicutes, not Bacillota
+ab_table_work$phylum_a <- gsub("_([A-Z])$", "", ab_table_work$phylum_a)
+
+
+```
+## GENUS
+
+```{r}
+#GENUS
+
+genus_search <- unique((ab_table_work$genus_a[ab_table_work$genus_a !="NA"]))#1036
+
+# write.table(genus_search, "genus_to_NCBITax.txt", quote=F, col.names = F, row.names = F)
+
+# going to https://www.ncbi.nlm.nih.gov/Taxonomy/TaxIdentifier/tax_identifier.cgi
+
+report_NCBItaxonomy<-read.table("tax_report_genus.txt", sep="|", header = T) # 1047 results de 1036. 11 dup.
+report_NCBItaxonomy$name<- gsub("\t", "", report_NCBItaxonomy$name)
+report_NCBItaxonomy$code<- gsub("\t", "", report_NCBItaxonomy$code)
+                                
+ncbi_subset_cases_to_explore<-subset(report_NCBItaxonomy, report_NCBItaxonomy$code =="1+")
+# Searching in NCBI taxonomy to know which NCBI code is ok and which is not good (is not Bacteria)
+
+# Example:
+rows_to_remove_genus<-c("55087", "3062447","82283","132406","508215","90690", "108061","40929", "210425", "2985502","444888")
+
+report_NCBItaxonomy <- report_NCBItaxonomy[!report_NCBItaxonomy$taxid %in% rows_to_remove_genus,] 
+
+report_NCBItaxonomy_wo_NA<-na.omit(report_NCBItaxonomy)
+report_NCBItaxonomy_wo_NA$name<- gsub("\t", "", report_NCBItaxonomy_wo_NA$name) 
+
+# Verify that entries match
+taxids_pendents_16S_species<-na.omit(report_NCBItaxonomy$taxid) # 375, coincides ok
+
+taxonomiagenus_pendent<- getTaxonomy(ids = taxids_pendents_16S_species, sqlFile="./taxonomizr/nameNode.sqlite", desiredTaxa=c("phylum", "class", "order", "family", "genus"))
+
+taxonomiagenus_pendent<-as.data.frame(taxonomiagenus_pendent)
+
+taxonomiagenus_pendent<-taxonomiagenus_pendent %>%
+  replace(is.na(.),"Not_defined")
+
+rownames(taxonomiagenus_pendent)<-report_NCBItaxonomy_wo_NA$name
+
+ab_table_work$Passed <- ab_table_work$genus_a %in% taxonomiagenus_pendent$genus
+
+table(ab_table_work$Passed)
+
+
+for (i in 1:nrow(taxonomiagenus_pendent)) {
+  position_spec<-ab_table_work$genus_a == row.names(taxonomiagenus_pendent)[i] & !is.na(ab_table_work$genus_a)
+  ab_table_work[position_spec, c("phylum_a", "class_a","order_a", "family_a",
+                               "genus_a")] <- taxonomiagenus_pendent[i, c("phylum", "class", "order","family","genus")]
+  ab_table_work$Passed[position_spec]<-T
+  rm(position_spec)
+}
+
+
+table(ab_table_work$genus_a %in% taxonomiagenus_pendent$genus)
+
+
+table(ab_table_work$Passed)
+
+
+```
+
+
+## FAMILY
+
+```{r}
+# FAMILY
+
+family_pendents_16s<- na.omit(unique(ab_table_work$family_a[ab_table_work$Passed==F]))
+sort(table(family_pendents_16s), decreasing = F) # No duplicares
+length(unique(family_pendents_16s))
+# write.table(family_pendents_16s,"family_16S_NCBITax.txt", quote = F, col.names = F, row.names = F)
+
+# going to https://www.ncbi.nlm.nih.gov/Taxonomy/TaxIdentifier/tax_identifier.cgi
+
+report_NCBItaxonomy<-read.table("tax_report_family.txt", sep="|", header = T)# 123 results, no repe 
+report_NCBItaxonomy$name<- gsub("\t", "", report_NCBItaxonomy$name)
+report_NCBItaxonomy$code<- gsub("\t", "", report_NCBItaxonomy$code)
+
+
+
+
+report_NCBItaxonomy<-report_NCBItaxonomy[,c(1,2,4)]
+report_NCBItaxonomy_wo_NA<-na.omit(report_NCBItaxonomy)
+report_NCBItaxonomy_wo_NA$name<- gsub("\t", "", report_NCBItaxonomy_wo_NA$name)#40
+
+taxids_pendents_16s_families<-na.omit(report_NCBItaxonomy$taxid)#40. ok coincideix.
+
+taxonomia_families_16s_pendent<- getTaxonomy(ids = taxids_pendents_16s_families, sqlFile="./taxonomizr/nameNode.sqlite", desiredTaxa=c( "phylum", "class", "order", "family"))
+
+taxonomia_families_16s_pendent<-as.data.frame(taxonomia_families_16s_pendent)
+
+
+taxonomia_families_16s_pendent<-taxonomia_families_16s_pendent %>%
+  replace(is.na(.),"Not_defined")
+
+
+rownames(taxonomia_families_16s_pendent)<-report_NCBItaxonomy_wo_NA$name
+
+for (i in 1:nrow(taxonomia_families_16s_pendent)) {
+  position_fam<-ab_table_work$family_a == row.names(taxonomia_families_16s_pendent)[i] & !is.na(ab_table_work$family_a) & ab_table_work$Passed == "FALSE"
+  ab_table_work[position_fam, c("phylum_a", "class_a","order_a", "family_a")] <- taxonomia_families_16s_pendent[i, c("phylum", "class", "order","family")]
+  ab_table_work$Passed[position_fam]<-T
+  rm(position_fam)
+}
+
+
+table(ab_table_work$family_a%in% taxonomia_families_16s_pendent$family)
+
+```
+
+
+## ORDER
+
+```{r}
+#ORDER
+order_pendents_16s<- na.omit(unique(ab_table_work$order_a[ab_table_work$Passed==F])) #36 orders
+# write.table(order_pendents_16s,"order_16S_NCBITax.txt", quote = F, col.names = F, row.names = F)
+# going to https://www.ncbi.nlm.nih.gov/Taxonomy/TaxIdentifier/tax_identifier.cgi
+
+report_NCBItaxonomy<-read.table("tax_report_order.txt", sep="|", header = T)#36 perfe
+report_NCBItaxonomy$name<- gsub("\t", "", report_NCBItaxonomy$name)
+report_NCBItaxonomy$code<- gsub("\t", "", report_NCBItaxonomy$code)
+
+report_NCBItaxonomy<-report_NCBItaxonomy[,c(1,2,4)]
+report_NCBItaxonomy_wo_NA<-na.omit(report_NCBItaxonomy)
+ report_NCBItaxonomy_wo_NA$name<- gsub("\t", "", report_NCBItaxonomy_wo_NA$name)#14
+
+
+taxids_pendents_16s_orders<-na.omit(report_NCBItaxonomy$taxid) #14 element
+
+taxonomia_orders_16s_pendent<- getTaxonomy(ids = taxids_pendents_16s_orders, sqlFile="./taxonomizr/nameNode.sqlite", desiredTaxa=c("phylum", "class", "order"))
+
+taxonomia_orders_16s_pendent<-as.data.frame(taxonomia_orders_16s_pendent)
+
+
+taxonomia_orders_16s_pendent<-taxonomia_orders_16s_pendent %>%
+  replace(is.na(.),"Not_defined")
+
+
+rownames(taxonomia_orders_16s_pendent)<-report_NCBItaxonomy_wo_NA$name
+
+
+for (i in 1:nrow(taxonomia_orders_16s_pendent)) {
+  position_ord<-ab_table_work$order_a == row.names(taxonomia_orders_16s_pendent)[i] & !is.na(ab_table_work$order_a) & ab_table_work$Passed == "FALSE"
+  ab_table_work[position_ord, c("phylum_a", "class_a","order_a")] <- taxonomia_orders_16s_pendent[i, c("phylum", "class", "order")]
+  ab_table_work$Passed[position_ord]<-T
+  rm(position_ord)
+}
+
+
+table(ab_table_work$order_a %in% taxonomia_orders_16s_pendent$order)
+table(ab_table_work$Passed)
+```
+
+## CLASS
+
+```{r}
+#CLASS
+class_pendents_16s<- na.omit(unique(ab_table_work$class_a[ab_table_work$Passed==F])) #11
+# write.table(class_pendents_16s,"class_16S_NCBITax.txt", quote = F, col.names = F, row.names = F)
+# going to https://www.ncbi.nlm.nih.gov/Taxonomy/TaxIdentifier/tax_identifier.cgi
+
+report_NCBItaxonomy<-read.table("tax_report_class.txt", sep="|", header = T)#11 perfe
+report_NCBItaxonomy$name<- gsub("\t", "", report_NCBItaxonomy$name)
+report_NCBItaxonomy$code<- gsub("\t", "", report_NCBItaxonomy$code)
+
+report_NCBItaxonomy<-report_NCBItaxonomy[,c(1,2,4)]
+report_NCBItaxonomy_wo_NA<-na.omit(report_NCBItaxonomy)
+ report_NCBItaxonomy_wo_NA$name<- gsub("\t", "", report_NCBItaxonomy_wo_NA$name)#8
+
+
+taxids_pendents_16s_class<-na.omit(report_NCBItaxonomy$taxid) 
+taxonomia_class_16s_pendent<- getTaxonomy(ids = taxids_pendents_16s_class, sqlFile="./6_post_kraken/taxonomizr/nameNode.sqlite", desiredTaxa=c("phylum", "class"))
+taxonomia_class_16s_pendent<-as.data.frame(taxonomia_class_16s_pendent)
+
+taxonomia_class_16s_pendent<-taxonomia_class_16s_pendent %>%
+  replace(is.na(.),"Not_defined")
+
+rownames(taxonomia_class_16s_pendent)<-report_NCBItaxonomy_wo_NA$name
+
+for (i in 1:nrow(taxonomia_class_16s_pendent)) {
+  position_cla<-ab_table_work$class_a == row.names(taxonomia_class_16s_pendent)[i] & !is.na(ab_table_work$class_a) & ab_table_work$Passed == "FALSE"
+  ab_table_work[position_cla, c("phylum_a", "class_a")] <- taxonomia_class_16s_pendent[i, c("phylum", "class")]
+  ab_table_work$Passed[position_cla]<-T
+  rm(position_cla)
+}
+
+
+table(ab_table_work$class_a %in% taxonomia_class_16s_pendent$class)
+
+table(ab_table_work$Passed)
+
+# Firmicutes phylum. Update to Bacillota.
+test<-ab_table_work
+test$phylum_a<-gsub("Firmicutes", "Bacillota", test$phylum_a)
+rm(ab_table_work)
+ab_table_work<-test
+rm(test)
+```
+## Closing the update
+
+
+```{r eval=FALSE, include=FALSE}
+# Final inspection of processed taxonomy tables
+ab_table_work    # Table with updated taxonomy (post-cleaning)
+ab_table         # Original OTU/ASV table (last 6 columns to be removed later)
+
+# --- STEP 1: Rebuild final lineage string based on cleaned NCBI taxonomy ---
+
+# Create a unified taxonomy string (semicolon-separated) using harmonized ranks
+ab_table_work$Lineage_ESTABLISHED_TAXONOMIZR_NCBI <- paste(
+  ab_table_work$phylum_a,
+  ab_table_work$class_a,
+  ab_table_work$order_a,
+  ab_table_work$family_a,
+  ab_table_work$genus_a,
+  ab_table_work$species_a,
+  sep = ";"
+)
+
+# Assign the definitive taxonomy string to the main ASV table
+ab_table$Lineage_definitive <- ab_table_work$Lineage_ESTABLISHED_TAXONOMIZR_NCBI
+
+# Check for duplicate taxonomy entries
+table(duplicated(ab_table$Lineage_definitive))
+# Expected output:
+# FALSE  TRUE 
+# 4518   110
+
+# Validate consistency with original lineage (if applicable)
+table(ab_table_work$Lineage_anc %in% ab_table$Lineage_anc)
+identical(ab_table_work$Lineage_anc, ab_table$Lineage_anc)
+
+# --- STEP 2: Remove redundant or unnecessary columns from original table ---
+
+# Drop columns 1 and 1302:1307 (e.g., metadata, taxonomic strings)
+ab_table <- ab_table[c(2:1308)]
+
+# Reorder columns: move Lineage_definitive to the front
+test <- ab_table
+test <- test[c("Lineage_definitive", setdiff(names(test), "Lineage_definitive"))]
+test <- test[, c(1:1301)]  # Optional: truncate to desired column count
+
+# Optional: Save intermediate cleaned ASV table
+# saveRDS(test, "GCAT_table.rds")
+
+# Check number of unique lineage definitions
+length(test$Lineage_definitive)        # e.g., 4628
+length(unique(test$Lineage_definitive)) # e.g., 4518 — implies 110 duplicates
+
+# --- STEP 3: Transpose table to format taxa as columns ---
+
+test <- t(test)
+new_colnames <- test[1, ]  # First row becomes column names (lineages)
+
+test2 <- test[-1, ]        # Remove first row
+colnames(test2) <- new_colnames  # Assign column names
+
+# Optional: Save transposed matrix with lineage headers
+# saveRDS(test2, "matriu_quasi.rds")
+
+# --- STEP 4: Melt table and cast to abundance matrix (long → wide format) ---
+
+library(reshape2)
+
+# Prevent scientific notation from interfering with value formatting
+options(scipen = 0)
+
+# Convert to matrix before melting
+matrix_df <- as.matrix(test2)
+melted_df <- melt(matrix_df)
+melted_df$value <- as.numeric(melted_df$value)  # Ensure numeric data
+str(melted_df)
+
+# Reshape melted data: taxa (Var2) as columns, samples (Var1) as rows
+abundance_table_nonredundant <- dcast(
+  melted_df,
+  Var1 ~ Var2,
+  value.var = "value",
+  fun.aggregate = sum
+)
+abundance_table_nonredundant$Var1 <- as.factor(abundance_table_nonredundant$Var1)
+
+# Transpose to get final abundance_table format (samples as columns, taxa as rows)
+abundance_table <- t(abundance_table_nonredundant)
+abundance_table <- as.data.frame(abundance_table)
+
+# Fix column names (sample identifiers)
+new_colnames <- abundance_table[1, ]
+abundance_table <- abundance_table[-1, ]
+colnames(abundance_table) <- new_colnames
+
+# Reactivate scientific notation
+options(scipen = 999)
+
+# Final formatting: convert to matrix and remove row names
+abundance_table <- as.matrix(abundance_table)
+
+abundance_table
+
+# --- STEP 5: Save final abundance_table abundance matrix ---
+
+# Save with appropriate filename (modify depending on versioning or filtering logic)
+saveRDS(GCAT, "2_abundance_table_BEC.rds")
+
+```
+
+
+
+## OTU_table
+
+```{r}
+class(GCAT)
+# [1] "matrix" "array" 
+
+GCAT_rownames<-rownames(GCAT)
+test<-GCAT
+test_rownames<-rownames(test)
+
+test<-as.data.frame(test)
+
+# Convert all columns to numeric
+test[] <- lapply(test, function(x) as.numeric(as.character(x)))
+
+GCAT_table_ps<-as.matrix(test)
+```
+
+```{r}
+OTU_table <- phyloseq::otu_table(GCAT_table_ps, taxa_are_rows = T)
+head(taxa_names(otu_table(OTU_table))) 
+```
+
+
+##########################################
+# 2 TAX_table
+##########################################
+
+
+```{r}
+xnames = rownames(OTU_table)
+shortnames = gsub(paste0(".+\\",";"), "", xnames)
+split=";"
+x2 = strsplit(xnames, split=split, fixed = T)
+taxmat = matrix(NA, ncol=max(sapply(x2,length)), nrow = length(x2))
+colnames(taxmat) = c("Phylum", "Class", "Order", "Family", "Genus", "Species")[1:ncol(taxmat)]
+rownames(taxmat) = rownames(OTU_table)
+for (i in 1:nrow(taxmat)){
+  taxmat[i, 1:length(x2[[i]])] <- x2[[i]]
+}
+
+head(taxmat)
+taxmat = phyloseq::tax_table(taxmat)
+
+```
+
+
+
+##########################################
+# 3 SAMPLE_TABLE: metadadades 
+##########################################
+
+
+```{r}
+
+rownames(metadata)<-metadata$id_icobiobanc
+
+
+metadata_ps <- sample_data(metadata)
+
+object_PS<- phyloseq(OTU_table,taxmat,metadata_ps)
+object_PS
+
+# phyloseq-class experiment-level object
+# otu_table()   OTU Table:         [ XXX taxa and XXX samples ]
+# sample_data() Sample Data:       [ XXX samples by XXX sample variables ]
+# tax_table()   Taxonomy Table:    [ XXX taxa by XXX taxonomic ranks ]
+
+object_psdef<- microViz::ps_reorder(object_PS, sort(rownames(sample_data(object_PS))))
+
+sample_data(object_psdef)
+
+#saveRDS(object_psdef,"phyloseqobject.rds")
+
+```
 
 
 
