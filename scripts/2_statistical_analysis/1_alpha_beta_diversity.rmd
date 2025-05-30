@@ -1,1 +1,121 @@
+---
+title: "1_alpha_beta_diversity"
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output:
+  html_document:
+    df_print: paged
+    toc: true
+    toc_depth: 3
+    toc_float: true
+---
+
+
+```{r}
+library(phyloseq)
+library(ggplot2)
+library(ggpubr)
+library(cowplot)
+library(microbiome)
+
+library(zCompositions)
+
+```
+
+```{r}
+# Call functions:
+
+source("./filter_matrix.R")
+
+```
+
+
+
+
+
+
+##################################################
+# Part 1: Preprocessing Before Diversity Analyses
+##################################################
+
+
+
+## a) Rarefaction  - alpha diversity
+##################################################
+
+All samples are subsampled to the same sequencing depth to correct for differences in library size. This step allows fair comparison of diversity indices such as Shannon and Chao1 across samples.
+
+```{r}
+psdata1<-readRDS("./phyloseqobject.rds")
+ps_specie_raref = rarefy_even_depth(psdata1, rngseed=1, sample.size=min(sample_sums(psdata1)), replace=T) 
+saveRDS(ps_specie_raref,"ps_rarefied_phyloseqobject_specie.rds")
+
+```
+
+## b) Data trasnformation - beta diversity
+##################################################
+
+## - Zero filtering
+
+Taxa with zero counts across all samples are removed to reduce sparsity and noise in the dataset.
+
+
+```{r}
+# load data:
+ps_specie<-readRDS("./phyloseqobject.rds")
+
+# Extracting otu_tables
+sp_ps<-as.data.frame(t(otu_table(ps_specie))) # We desire the samples as rows, not columns.
+
+# modif colnames sp 
+
+extract_last_part <- function(name) {
+  # Dividir el nom per `;` i obtenir l'últim element
+  parts <- strsplit(name, ";")[[1]]
+  tail(parts, n = 1)
+}
+colnames(sp_ps) <- sapply(colnames(sp_ps), extract_last_part)
+
+```
+
+
+```{r}
+abund_filt_sp <- filter_matrix(sp_ps,nsamples_filter = ceiling(nrow(sp_ps)*0.05)) 
+ntaxa_sp <- data.frame(species=c(ncol(sp_ps),ncol(abund_filt_sp)))
+rownames(ntaxa_sp) <- c("Nofilt","Filtered")
+
+```
+
+
+
+## c) CLR transformation.
+##################################################
+A Centered Log-Ratio (CLR) transformation is applied to the count data to handle its compositional nature. This step is essential before computing distances such as the Aitchison distance, which requires data in Euclidean space.
+
+```{r}
+
+
+```
+
+
+
+##################################################
+# Part 2: Diversity Analyses
+##################################################
+
+## a) Alpha Diversity
+##################################################
+
+```{r}
+
+
+```
+
+
+## b) Beta Diversity
+##################################################
+
+```{r}
+
+
+```
 
