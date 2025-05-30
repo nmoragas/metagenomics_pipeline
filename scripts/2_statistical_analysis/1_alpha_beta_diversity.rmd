@@ -18,6 +18,7 @@ library(cowplot)
 library(microbiome)
 
 library(zCompositions)
+library(compositions)
 
 ```
 
@@ -79,10 +80,29 @@ colnames(sp_ps) <- sapply(colnames(sp_ps), extract_last_part)
 
 
 ```{r}
-abund_filt_sp <- filter_matrix(sp_ps,nsamples_filter = ceiling(nrow(sp_ps)*0.05)) 
-ntaxa_sp <- data.frame(species=c(ncol(sp_ps),ncol(abund_filt_sp)))
-rownames(ntaxa_sp) <- c("Nofilt","Filtered")
+# Filter species by minimum relative abundance in a minimum number of samples
+abund_filt_sp <- filter_matrix(
+  sp_ps,
+  nsamples_filter = ceiling(nrow(sp_ps) * 0.05)  # Keep taxa present above threshold in at least 5% of samples
+)
 
+# Record the number of species (taxa) before and after filtering
+ntaxa_sp <- data.frame(
+  species = c(ncol(sp_ps), ncol(abund_filt_sp))
+)
+rownames(ntaxa_sp) <- c("Unfiltered", "Filtered")
+
+# Replace zeros in the abundance matrix
+# This step is necessary before applying compositional data analysis (e.g., CLR transformation)
+zeros_specie <- cmultRepl(
+  abund_filt_sp,
+  output = "p-counts",     # Returns pseudo-counts to avoid issues with zeros
+  method = "SQ",           # Uses the Square Root method for imputation
+  z.warning = 0.95         # Suppresses warnings when a large proportion of zeros is detected
+)
+
+
+saveRDS(zeros_specie, "zeros_abund_sp.rds")
 ```
 
 
@@ -92,8 +112,9 @@ rownames(ntaxa_sp) <- c("Nofilt","Filtered")
 A Centered Log-Ratio (CLR) transformation is applied to the count data to handle its compositional nature. This step is essential before computing distances such as the Aitchison distance, which requires data in Euclidean space.
 
 ```{r}
-
-
+clr_species<-compositions::clr(zeros_specie)
+clr_species<-as.data.frame(clr_species)
+saveRDS(clr_species,"clr_species.rds")
 ```
 
 
