@@ -1,6 +1,7 @@
 # 2 - Statistical Analysis
 This folder contains scripts used for the statistical analysis of microbiome data, structured into four main areas:
 
+
 ## ⚙️ Structure
 
 | Script                         | Description                                                                                                      |
