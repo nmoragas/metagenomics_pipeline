@@ -4,7 +4,7 @@ Shotgun metagenomics pipeline for processing microbiome samples
 </p>
 
 ---
-                
+                 
 ## Table of contents    
                
 - [0 - Overview](#over) - Overview of the project's purpose and goals
