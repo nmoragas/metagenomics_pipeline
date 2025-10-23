@@ -3,7 +3,7 @@
 Shotgun metagenomics pipeline for processing microbiome samples
 </p>
 
----        
+---         
                            
 ## Table of contents              
 
