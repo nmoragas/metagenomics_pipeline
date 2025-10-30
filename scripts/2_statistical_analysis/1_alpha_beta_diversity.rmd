@@ -10,7 +10,7 @@ output:
 ---
 
  
-```{r}
+```{r} 
 library(phyloseq)
 library(ggplot2)
 library(ggpubr)
