@@ -9,6 +9,7 @@
 #SBATCH --array=1-2%2
 
 
+
 # Please note that this was done before submission
 
 module load apps/java 
