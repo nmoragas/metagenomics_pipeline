@@ -1,5 +1,4 @@
 #!/bin/bash
-
 #SBATCH --job-name=hum_rem
 #SBATCH --mem=40G
 #SBATCH --ntasks=1
