@@ -1,7 +1,7 @@
 
 
 # To modify
----------------------------------------------------------------
+#---------------------------------------------------------------
 # Configuration variables (edit before running the pipeline)
 
 n_samples=           # Total number of samples to process
@@ -11,7 +11,7 @@ human_db_dir=        # Path to your human (host) Kraken2 reference database
 
 
 # Do not modify:
----------------------------------------------------------------
+#---------------------------------------------------------------
 # Paths for intermediate and output directories used by each pipeline step
 
 temp1=./temp/1_human_remove/human
