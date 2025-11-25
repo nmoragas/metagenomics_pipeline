@@ -10,7 +10,7 @@
 #SBATCH --array=1-2%2
 
 
-options=options.txt
+options=options.txt 
 source $(echo $options)
 
 
