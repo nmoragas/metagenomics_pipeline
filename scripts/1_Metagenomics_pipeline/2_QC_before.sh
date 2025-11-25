@@ -12,6 +12,7 @@
 
 
 
+
 options=options.txt
 source $(echo $options)
 
