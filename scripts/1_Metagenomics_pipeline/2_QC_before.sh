@@ -12,7 +12,7 @@
 
 options=options.txt 
 source $(echo $options)
-
+ 
  
 ########################################
 #####   2_QC_FASTQC_before_trim    #####
