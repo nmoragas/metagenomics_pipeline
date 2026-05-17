@@ -1,22 +1,23 @@
 ---
-title: "1_alpha_beta_diversity"
+  title: "1_alpha_beta_diversity"
 date: "`r format(Sys.time(), '%d %B %Y')`"
 output:
   html_document:
-    df_print: paged
-    toc: true
-    toc_depth: 3
-    toc_float: true
+  df_print: paged
+toc: true
+toc_depth: 3
+toc_float: true
 ---
   
   
-```{r} 
+  ```{r} 
 library(phyloseq)
 library(ggplot2)
 library(ggpubr)
 library(cowplot)
 library(microbiome)
-
+library(vegan)
+library(fossil)
 library(zCompositions)
 library(compositions)
 
@@ -126,8 +127,13 @@ saveRDS(clr_species,"clr_species.rds")
 ## a) Alpha Diversity
 ##################################################
 
+Shannon and Chao1 indexes:
+
 ```{r}
 
+# calculate diversity indexes by sample
+shan <- apply(ps_specie_raref, 1, vegan::diversity, index = 'shannon') #asymptotically normal distribution
+chao1  <- apply(round(sp_ps), 1, fossil::chao1)
 
 ```
 
@@ -135,8 +141,8 @@ saveRDS(clr_species,"clr_species.rds")
 ## b) Beta Diversity
 ##################################################
 
+Aitchison distance between samples:
+
 ```{r}
-
-
+aitchison <- vegan::vegdist(clr_species, method = "euclidean") 
 ```
-
